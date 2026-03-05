@@ -493,6 +493,30 @@ CM,COMP_AIR2,ELEM  ! magnetic tweezers as a component
 /REPLOT
 
 
+! ------------------------------------------------
+! [ADDED] Apply far-field boundary condition
+! Set MAG=0 on outer air cylinder boundary surfaces
+! so the DSP method (magsolv,3) has a unique solution
+! ------------------------------------------------
+AIR_CYL_Z_CTR = YOKE_H/2
+AIR_CYL_Z_BOT = AIR_CYL_Z_CTR - AIR_CYL_H/2
+AIR_CYL_Z_TOP = AIR_CYL_Z_CTR + AIR_CYL_H/2
+
+! [ADDED] Select nodes on lateral cylindrical surface (R = AIR_CYL_R)
+LOCAL,11,1,0,0,0                                          ! define local cylindrical CS
+CSYS,11                                                    ! activate cylindrical CS
+NSEL,S,LOC,X, AIR_CYL_R - 0.5e-3, AIR_CYL_R + 0.5e-3    ! select nodes at R ~ 80mm
+CSYS,0                                                     ! switch back to Cartesian
+
+! [ADDED] Also select nodes on top and bottom flat caps
+NSEL,A,LOC,Z, AIR_CYL_Z_TOP - 0.5e-3, AIR_CYL_Z_TOP + 0.5e-3
+NSEL,A,LOC,Z, AIR_CYL_Z_BOT - 0.5e-3, AIR_CYL_Z_BOT + 0.5e-3
+
+! [ADDED] Apply MAG=0 boundary condition on all selected nodes
+D,ALL,MAG,0
+ALLSEL,ALL
+
+
 !-------------------
 ! **** solving: ****
 !-------------------
