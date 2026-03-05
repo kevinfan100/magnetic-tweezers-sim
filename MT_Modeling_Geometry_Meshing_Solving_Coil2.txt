@@ -1,4 +1,5 @@
-/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
+!****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
+/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\results\coil2'   ! [MODIFIED] output to results/coil2
 
 Finish
 /cle

@@ -1,0 +1,33 @@
+# ANSYS result files (large, regenerable)
+*.rmg
+*.esav
+*.full
+*.rst
+*.rth
+*.db
+*.emat
+*.BCS
+*.stat
+*.r001
+*.ldhi
+*.mlv
+*.page
+
+# ANSYS log/temp files
+*.err
+*.log
+*.out
+*.lock
+*.mntr
+
+# Results directory
+results/
+
+# MATLAB temp files
+*.asv
+*.m~
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store
