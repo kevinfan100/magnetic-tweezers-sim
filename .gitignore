@@ -20,8 +20,8 @@
 *.lock
 *.mntr
 
-# Results directory
-results/
+# Results directories
+**/results/
 
 # MATLAB temp files
 *.asv

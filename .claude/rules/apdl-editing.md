@@ -1,5 +1,5 @@
 ---
-globs: ["*.txt"]
+globs: ["MT_simulation/*.txt"]
 ---
 
 # APDL Script Editing Rules
