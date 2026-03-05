@@ -2,7 +2,7 @@
 
 ## Software
 - **Version:** ANSYS Mechanical APDL 2025 R2
-- **Executable:** `C:\Program Files\ANSYS Inc\v252\ANSYS\bin\winx64\MAPDL.exe`
+- **Executable:** `C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe`
 - **Desktop shortcut:** `Mechanical APDL 2025 R2`
 - **License:** Research/Academic (single seat)
 
