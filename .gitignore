@@ -33,6 +33,13 @@ references/pdfs/*.pdf
 # Reference text extracts (regenerable from PDFs via pdftotext)
 references/texts/
 
+# ANSYS auto-generated cleanup scripts
+cleanup-ansys-*.bat
+file0.bat
+
+# MCP server config (local)
+.mcp.json
+
 # OS files
 Thumbs.db
 desktop.ini
