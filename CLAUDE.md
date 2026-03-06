@@ -16,6 +16,11 @@ KevinFan/                            Git root
 ├── CLAUDE.md                        This file
 ├── .gitignore                       Excludes ANSYS outputs
 ├── .claude/rules/                   Path-scoped editing rules
+├── references/                      Paper notes & PDFs (cross-project)
+│   ├── README.md                    Paper index & usage guide
+│   ├── pdfs/                        Original PDFs (gitignored)
+│   ├── texts/                       pdftotext extracts + page indexes (gitignored)
+│   └── notes/                       Structured Markdown notes (tracked)
 └── MT_simulation/                   Magnetic tweezers simulation project
     ├── MT_..._Coil[1-6].txt        APDL scripts (only CURR_ARRAY differs)
     ├── results/coil[1-6]/           ANSYS output files (gitignored, ~10GB)
@@ -44,6 +49,7 @@ KevinFan/                            Git root
 - `MT_simulation/agent_docs/simulation-parameters.md` - geometry, materials, mesh, solver
 - `MT_simulation/agent_docs/workflow.md` - 4-stage simulation-to-publication pipeline
 - `MT_simulation/agent_docs/troubleshooting.md` - known errors and fixes
+- `references/README.md` - paper index, notes-first reading strategy
 
 ## Compact Instructions
 When context is compressed, preserve:

@@ -27,6 +27,12 @@
 *.asv
 *.m~
 
+# Reference PDFs (large binary files)
+references/pdfs/*.pdf
+
+# Reference text extracts (regenerable from PDFs via pdftotext)
+references/texts/
+
 # OS files
 Thumbs.db
 desktop.ini
