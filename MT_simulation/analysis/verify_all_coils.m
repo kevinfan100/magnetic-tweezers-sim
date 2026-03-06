@@ -13,7 +13,8 @@ PROT_H    = 7.0e-3;
 SPH_OFST  = -PROT_H - 6e-3 + R_norm_z;
 
 % APDL coil index -> Paper pole name mapping
-apdl_to_paper = {'P1','P3','P5','P6','P2','P4'};
+% Lower: P1(0°), P3(120°), P6(240°)  |  Upper: P2(180°), P4(300°), P5(60°)
+apdl_to_paper = {'P1','P3','P6','P5','P2','P4'};
 
 results_base = fullfile(fileparts(mfilename('fullpath')), '..', 'results');
 

@@ -23,12 +23,14 @@ SPH_OFST   = -PROT_H - 6e-3 + R_norm_z;     % ~ -0.01271 m
 % Pole naming: Paper convention (differs from APDL internal numbering)
 %   APDL index:  1     2      3      4     5      6
 %   APDL angle:  0deg  120deg 240deg 60deg 180deg 300deg
-%   Paper name:  P1    P3     P5     P6    P2     P4
+%   Paper name:  P1    P3     P6     P5    P2     P4
 % Paper poles listed in order P1-P6:
-pole_angles = [0, 180, 120, 300, 240, 60];    % degrees (paper convention)
+pole_angles = [0, 180, 120, 300, 60, 240];    % degrees (paper convention)
 pole_labels = {'P1','P2','P3','P4','P5','P6'};
+% Lower: P1(0°), P3(120°), P6(240°)  |  Upper: P2(180°), P4(300°), P5(60°)
+% Opposite pairs: P1-P2, P3-P4, P5-P6
 % Mapping: APDL coil index -> paper pole name
-%   Coil1 -> P1, Coil2 -> P3, Coil3 -> P5, Coil4 -> P6, Coil5 -> P2, Coil6 -> P4
+%   Coil1 -> P1, Coil2 -> P3, Coil3 -> P6, Coil4 -> P5, Coil5 -> P2, Coil6 -> P4
 
 % Coil1 pole tip approximate position
 tip_x = R_norm_xy;                            % ~ 0.408 mm
