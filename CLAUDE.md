@@ -37,6 +37,8 @@ KevinFan/                            Git root
 - Always verify `D,ALL,MAG,0` boundary condition exists before `/SOLU`
 - Preserve original commented-out code (prefixed `!****`) unless asked to remove
 - Use tab indentation matching original style
+- Use dissertation notation (B, Phi, q, K_I, rho, R_a, g_I, etc.) in all discussion and code comments
+- Always refer to poles by paper name (P1-P6); mention APDL index only when editing APDL code
 
 ## Prohibitions
 - NEVER commit ANSYS output files (*.rst, *.db, *.full, etc.)
@@ -44,7 +46,21 @@ KevinFan/                            Git root
 - NEVER modify element types or material properties without approval
 - NEVER remove boundary condition section (`[ADDED]` block near line 500)
 
+## Notation Standard
+All symbols and terms follow Fei Long's 2016 dissertation. See the full glossary:
+- `MT_simulation/agent_docs/notation-glossary.md` - **canonical** symbol/term mapping
+
+Key conventions:
+- Use **paper pole names** (P1-P6) in all user-facing text, figures, and discussion
+- APDL coil indices (1-6) only in APDL code and raw data context
+- Mapping: APDL {1,2,3,4,5,6} = Paper {P1,P3,P6,P5,P2,P4}
+- Physical quantities use dissertation symbols: B (flux density), Phi (flux), q (charge), K_I, R_hat, L_i, rho, R_a, g_I, N_c
+- Two meanings of rho: physical (500 um) vs fitted (900 um) — always clarify which
+- Units: ANSYS outputs Tesla; figures use mT for WP region; dissertation Fig. 2.4 uses Gauss (1 mT = 10 Gauss)
+
 ## Detailed Docs
+- `MT_simulation/agent_docs/model-validation.md` - **APDL vs dissertation comparison, all issues documented**
+- `MT_simulation/agent_docs/notation-glossary.md` - unified notation, dissertation alignment
 - `MT_simulation/agent_docs/ansys-environment.md` - ANSYS install, batch mode, hardware
 - `MT_simulation/agent_docs/simulation-parameters.md` - geometry, materials, mesh, solver
 - `MT_simulation/agent_docs/workflow.md` - 4-stage simulation-to-publication pipeline
@@ -57,3 +73,5 @@ When context is compressed, preserve:
 2. Boundary condition D,ALL,MAG,0 is mandatory for DSP solver
 3. Results go to MT_simulation/results/coilN/ directories
 4. User prefers Traditional Chinese explanations
+5. Use paper pole names P1-P6 (not APDL indices) in all discussion
+6. Notation follows Long 2016 dissertation — see `agent_docs/notation-glossary.md`
