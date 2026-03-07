@@ -50,6 +50,15 @@ KevinFan/                            Git root
 - Use dissertation notation (B, Phi, q, K_I, rho, R_a, g_I, etc.) in all discussion and code comments
 - Always refer to poles by paper name (P1-P6); mention APDL index only when editing APDL code
 
+## Figure Production
+- **Never generate figures without discussion first.** Before producing any figure:
+  1. **Content**: Discuss what to show — which data, axes, normalization, range — to ensure the figure conveys its intended message clearly
+  2. **Style**: Discuss visual details — font family/size/weight, title wording, legend style, color scheme, line/border thickness, background, grid, units on axes, annotation placement
+  3. **Preview**: Use MATLAB MCP to render a draft, review together, iterate until approved
+  4. **Finalize**: Only save to `figures/` after user confirmation
+- Gradually build a **unified figure style** across the project; record agreed conventions in `MT_simulation/agent_docs/figure-style.md` once established
+- When style decisions are made, apply them consistently to all future figures
+
 ## Prohibitions
 - NEVER commit ANSYS output files (*.rst, *.db, *.full, etc.)
 - NEVER change geometry parameters without explicit user approval
