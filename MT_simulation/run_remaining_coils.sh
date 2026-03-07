@@ -24,8 +24,11 @@ for N in 2 3 4 5 6; do
     mkdir -p "results/coil${N}"
 
     # Run ANSYS MAPDL in batch mode
+    # -dir: temp files (.err/.log) go to results/coilN/ (gitignored)
+    # -j: jobname prefix (coilN.err instead of file.err)
     "$MAPDL" -b -np 4 -m 24000 \
-        -i "post_extract_coil${N}.txt" \
+        -dir "results/coil${N}" -j "coil${N}" \
+        -i "$(pwd)/post_extract_coil${N}.txt" \
         -o "results/coil${N}/solve.out" || true
 
     # Check for RUN COMPLETED

@@ -4,11 +4,21 @@
 ```bash
 # Run single coil (batch mode, no GUI) — run from MT_simulation/
 cd MT_simulation
-"C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 -i "MT_Modeling_Geometry_Meshing_Solving_Coil1.txt" -o "results\coil1\solve.out"
+"C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 \
+  -dir "results/coil1" -j "coil1" \
+  -i "$(pwd)/MT_Modeling_Geometry_Meshing_Solving_Coil1.txt" \
+  -o "results/coil1/solve.out"
 
 # Run all 6 coils sequentially
-for i in 1 2 3 4 5 6; do "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 -i "MT_Modeling_Geometry_Meshing_Solving_Coil${i}.txt" -o "results\coil${i}\solve.out"; done
+for i in 1 2 3 4 5 6; do
+  "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 \
+    -dir "results/coil${i}" -j "coil${i}" \
+    -i "$(pwd)/MT_Modeling_Geometry_Meshing_Solving_Coil${i}.txt" \
+    -o "results/coil${i}/solve.out"
+done
 ```
+- `-dir`: directs MAPDL process temp files (`.err`, `.log`) into `results/coilN/` (gitignored)
+- `-j`: sets jobname prefix (e.g. `coil1.err` instead of `file.err`)
 
 ## Architecture
 ```

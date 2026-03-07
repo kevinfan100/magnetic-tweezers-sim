@@ -8,15 +8,19 @@
 
 ## Batch Mode Syntax
 ```
-MAPDL.exe -b -np <cores> -m <memory_MB> -i <input.txt> -o <output.out>
+MAPDL.exe -b -np <cores> -m <memory_MB> -dir <workdir> -j <jobname> -i <input.txt> -o <output.out>
 ```
 | Flag | Description |
 |------|-------------|
 | `-b` | Batch mode (no GUI) |
 | `-np 4` | 4 CPU cores |
 | `-m 24000` | 24 GB memory allocation |
-| `-i` | Input APDL script |
+| `-dir` | MAPDL process working directory — temp files (`.err`, `.log`) go here |
+| `-j` | Jobname prefix (e.g. `coil1` → `coil1.err` instead of `file.err`) |
+| `-i` | Input APDL script (use absolute path when `-dir` is set) |
 | `-o` | Output log file |
+
+**Note:** `-dir` controls where MAPDL process temp files land. The APDL script's `/CWD` command separately controls where solver outputs (`.rst`, `.db`) are written. Both should point to `results/coilN/`.
 
 ## Hardware
 - **CPU:** Intel Core i5-14500 (14 cores / 20 threads)
