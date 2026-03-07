@@ -9,32 +9,20 @@
 
 clear; clc; close all;
 
-%% ---- Geometry constants (must match APDL script) ----
-R_norm    = 500e-6;                          % working radius [m]
-R_norm_xy = R_norm * sqrt(2/3);
-R_norm_z  = R_norm / sqrt(3);
-PROT_H    = 7.0e-3;
-PROT_R    = 10.0e-3 / 2;                    % protrusion radius 5mm
-YOKE_IN_R  = 84e-3 / 2;
-YOKE_OUT_R = 106e-3 / 2;
-YOKE_MID_R = (YOKE_IN_R + YOKE_OUT_R) / 2;  % 47.5 mm
-SPH_OFST   = -PROT_H - 6e-3 + R_norm_z;     % ~ -0.01271 m
-
-% Pole naming: Paper convention (differs from APDL internal numbering)
-%   APDL index:  1     2      3      4     5      6
-%   APDL angle:  0deg  120deg 240deg 60deg 180deg 300deg
-%   Paper name:  P1    P3     P6     P5    P2     P4
-% Paper poles listed in order P1-P6:
-pole_angles = [0, 180, 120, 300, 60, 240];    % degrees (paper convention)
-pole_labels = {'P1','P2','P3','P4','P5','P6'};
-% Lower: P1(0°), P3(120°), P6(240°)  |  Upper: P2(180°), P4(300°), P5(60°)
-% Opposite pairs: P1-P2, P3-P4, P5-P6
-% Mapping: APDL coil index -> paper pole name
-%   Coil1 -> P1, Coil2 -> P3, Coil3 -> P6, Coil4 -> P5, Coil5 -> P2, Coil6 -> P4
+%% ---- Geometry constants (from shared mt_constants) ----
+c = mt_constants();
+R_norm_xy  = c.R_norm_xy;
+SPH_OFST   = c.SPH_OFST;
+PROT_R     = c.PROT_R;
+YOKE_IN_R  = c.YOKE_IN_R;
+YOKE_OUT_R = c.YOKE_OUT_R;
+YOKE_MID_R = c.YOKE_MID_R;
+pole_angles = c.pole_angles;
+pole_labels = c.pole_labels;
 
 % Coil1 pole tip approximate position
 tip_x = R_norm_xy;                            % ~ 0.408 mm
-tip_z = SPH_OFST - R_norm_z;                  % ~ -13.0 mm
+tip_z = SPH_OFST - c.R_norm_z;               % ~ -13.0 mm
 
 %% ---- Load data ----
 results_dir = fullfile(fileparts(mfilename('fullpath')), '..', 'results', 'coil1');
@@ -112,6 +100,9 @@ plot(YOKE_IN_R*1e3*cos(theta_c), YOKE_IN_R*1e3*sin(theta_c), ...
      'r--', 'LineWidth', 0.8);
 plot(YOKE_OUT_R*1e3*cos(theta_c), YOKE_OUT_R*1e3*sin(theta_c), ...
      'r--', 'LineWidth', 0.8);
+
+% WP center crosshair
+plot(0, 0, 'k+', 'MarkerSize', 14, 'LineWidth', 2);
 hold off;
 
 axis equal; grid on;
@@ -139,13 +130,42 @@ end
 qx = wp.x(mask_b)*1e6;
 qy = wp.y(mask_b)*1e6;
 qz = (wp.z(mask_b) - SPH_OFST)*1e6;
-quiver3(qx, qy, qz, wp.bx(mask_b), wp.by(mask_b), wp.bz(mask_b), ...
-        'b', 'LineWidth', 1);
+bx_b = wp.bx(mask_b);
+by_b = wp.by(mask_b);
+bz_b = wp.bz(mask_b);
+bmag_b = wp.bsum(mask_b) * 1e3;  % mT
+
+% Normalize arrows to unit direction, then scale to visible length in um
+arrow_len = 8;  % arrow length in um
+bmag_raw = sqrt(bx_b.^2 + by_b.^2 + bz_b.^2);
+bmag_raw(bmag_raw == 0) = 1;
+ux = bx_b ./ bmag_raw * arrow_len;
+uy = by_b ./ bmag_raw * arrow_len;
+uz = bz_b ./ bmag_raw * arrow_len;
+
+% Color-coded 3D quiver: draw each arrow with color mapped to |B|
+cmap = jet(256);
+clim_b = [min(bmag_b), max(bmag_b)];
+if clim_b(2) == clim_b(1), clim_b(2) = clim_b(1) + 1; end
+hold on;
+for j = 1:length(qx)
+    cidx = round((bmag_b(j) - clim_b(1)) / (clim_b(2) - clim_b(1)) * 255) + 1;
+    cidx = max(1, min(256, cidx));
+    quiver3(qx(j), qy(j), qz(j), ux(j), uy(j), uz(j), 0, ...
+            'Color', cmap(cidx,:), 'LineWidth', 1.2, 'MaxHeadSize', 0.4);
+end
+hold off;
+colormap(jet);
+clim(clim_b);
+cb_b = colorbar;
+ylabel(cb_b, '|B| [mT]');
 axis equal; grid on; box on;
-xlabel('x (\mum)'); ylabel('y (\mum)'); zlabel('z (\mum)');
+xlabel('x [\mum]'); ylabel('y [\mum]'); zlabel('z [\mum]');
 title('(b) B-field vectors near workspace center');
 view([-37.5, 30]);
-xlim([-60 60]); ylim([-60 60]); zlim([-60 60]);
+lim_b = max(abs([qx; qy; qz])) * 1.2;
+if isempty(lim_b), lim_b = 60; end
+xlim([-lim_b lim_b]); ylim([-lim_b lim_b]); zlim([-lim_b lim_b]);
 
 %% ======== Fig (c): Pole tip vectors (matches thesis Fig.2.3c) ========
 figure('Name', 'Fig(c): Pole tip vectors', 'Position', [150 150 800 500]);
@@ -249,6 +269,6 @@ fig_names = {'verify_coil1_a', 'verify_coil1_b', ...
              'verify_coil1_c', 'verify_coil1_d'};
 for k = 1:4
     exportgraphics(figure(k), fullfile(fig_dir, [fig_names{k} '.png']), ...
-                   'Resolution', 200);
+                   'Resolution', 300);
 end
 fprintf('Figures saved to %s\n', fig_dir);
