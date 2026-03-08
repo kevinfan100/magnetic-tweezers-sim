@@ -36,4 +36,42 @@ function c = mt_constants()
     c.pole_tip_x = c.R_norm_xy * cosd(c.pole_angles);   % [m]
     c.pole_tip_y = c.R_norm_xy * sind(c.pole_angles);   % [m]
     c.pole_tip_z_wp = [-1, +1, -1, +1, +1, -1] * c.R_norm_z;  % [m] P1-P6
+
+    % Cone geometry (for iron exclusion filter)
+    c.POLE_TIP_R    = 40e-6;       % tip radius [m]
+    c.POLE_R        = 3e-3;        % base radius [m] (half of 6 mm diameter)
+    c.POLE_CONE_LEN = 15e-3;       % cone length [m]
+
+    % Upper pole incline angle (from APDL lines 218-233)
+    %   tip -> (R_norm_xy, 0, SPH_OFST + R_norm_z) in APDL coords
+    %   end -> (YOKE_MID_R - 11.5mm, 0, YOKE_H + PROT_H + 5mm)
+    %   INCLINE_ANG = atan2(dz, dr_horizontal)
+    YOKE_H = 2e-3;
+    end_upper_r = c.YOKE_MID_R - 11.5e-3;            % 36 mm
+    end_upper_z = YOKE_H + c.PROT_H + 5e-3;          % 14 mm (APDL coords)
+    tip_upper_z = -c.PROT_H - 6e-3 + 2*c.R_norm_z;   % APDL coords
+    dz = end_upper_z - tip_upper_z;
+    dr = end_upper_r - c.R_norm_xy;
+    c.upper_incline = atan2(dz, dr);  % ~36.6 deg from horizontal
+
+    % Pole axis directions (unit vectors, tip -> base, in WP frame)
+    %   Lower: horizontal radial outward
+    %   Upper: inclined upward at upper_incline
+    c.pole_is_lower = [1, 0, 1, 0, 0, 1];  % P1-P6
+    c.pole_axis = zeros(3, 6);
+    for i = 1:6
+        theta = c.pole_angles(i) * pi/180;
+        if c.pole_is_lower(i)
+            c.pole_axis(:,i) = [cos(theta); sin(theta); 0];
+        else
+            inc = c.upper_incline;
+            c.pole_axis(:,i) = [cos(inc)*cos(theta); cos(inc)*sin(theta); sin(inc)];
+        end
+    end
+
+    % Physical constants for point-charge model
+    c.N_c   = 70;                  % coil turns per pole
+    c.mu_0  = 4*pi*1e-7;          % vacuum permeability [H/m]
+    c.k_m   = 1e-7;               % mu_0 / (4*pi) [N/A^2]
+    c.alpha = atan2(c.R_norm_xy, c.R_norm_z);  % polar angle of tips on charge sphere (~54.74 deg)
 end
