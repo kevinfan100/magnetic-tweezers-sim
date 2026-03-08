@@ -1,0 +1,48 @@
+! ============================================================
+! Single-Pole Magnetic Tweezers Tutorial
+! ============================================================
+! A step-by-step APDL tutorial building ONE pole from scratch.
+! Each "STEP N" section introduces one major concept.
+! Run this script in MAPDL via:
+!   /INPUT,'<full-path>\single_pole','txt'
+! ============================================================
+
+
+! === STEP 1: Environment Setup + Yoke Ring ==================
+! Learn: script structure, /PREP7, units, CYL4 primitive
+! Build: hollow yoke ring (inner R=42mm, outer R=53mm, H=2mm)
+! ============================================================
+
+! --- 1a. Housekeeping: clear previous model, set title ------
+FINISH                        ! exit any active processor
+/CLEAR,NOSTART                ! reset MAPDL (clears geometry, mesh, everything)
+
+/TITLE, Single-Pole MT Tutorial   ! title shown in Graphics Window
+/FILNAME,single_pole,1            ! output file prefix
+
+/PREP7                        ! enter the pre-processor (geometry, mesh, materials)
+
+! --- 1b. Global settings ------------------------------------
+*afun, DEG                    ! use degrees for trig functions (not radians)
+BTOL, 1e-6                    ! boolean operation tolerance
+/UNITS, MKS                   ! SI units: meters, kg, seconds, Amperes
+
+! --- 1c. Define geometric parameters ------------------------
+YOKE_IN_R  = 84e-3/2.0       ! inner radius of yoke ring = 42 mm
+YOKE_OUT_R = 106e-3/2.0      ! outer radius of yoke ring = 53 mm
+YOKE_H     = 2.0e-3          ! yoke thickness = 2 mm
+
+! --- 1d. Create yoke ring -----------------------------------
+! CYL4 creates a cylindrical volume (hollow if inner R given)
+! Syntax: CYL4, XCENTER, YCENTER, RAD1, THETA1, RAD2, THETA2, DEPTH
+!   RAD1  = inner radius
+!   RAD2  = outer radius
+!   DEPTH = height in Z direction
+CYL4, 0, 0, YOKE_IN_R, 0, YOKE_OUT_R, 360, YOKE_H
+
+! --- 1e. Verify: plot the yoke volume -----------------------
+/VIEW,1,1,1,1                ! isometric view
+/AUTO,1                       ! auto-fit to screen
+VPLOT                         ! plot all volumes -> should see a flat donut
+
+! === END STEP 1 =============================================
