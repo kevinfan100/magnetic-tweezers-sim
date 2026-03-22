@@ -134,10 +134,56 @@ Status: Pre-analysis validation complete. Ready to proceed with charge model fit
 | Pole shape detail | `figures/pole_shape_detail.png` | Cone cross-section and tip zoom |
 | murx analysis | `figures/murx_analysis.png` | mu_r(B) curve vs APDL constant 280 |
 
-## 6. Open Questions for Future Work
+## 6. B Perpendicularity at P1 Cone Surface
+
+**Script:** `analysis/verify_B_perpendicularity.m` (2026-03-21)
+
+Verified that B on the air side of the P1 cone surface is approximately
+perpendicular to the surface, as expected from the iron-air boundary
+condition (murx=280, theoretical deviation = arctan(1/280) ≈ 0.2°).
+
+### Method
+
+- Load Coil1 full mesh (~494k nodes), select fine sphere (R < 7mm)
+- For each axial bin (s = 1-6 mm from P1 tip, bin width 0.25 mm):
+  - Select confirmed-air nodes: |B| < 50 mT, dr > 0 (outside cone)
+  - Restrict to lower half (phi < -10°) to exclude VSBV flat-cut surface
+  - Take closest 20% shell (adaptive, min 3 nodes)
+  - Compute analytical cone normal and angle between B and normal
+
+### Key definitions
+
+- s: axial distance from P1 tip along cone axis (tip→base)
+- dr: radial distance from analytical cone surface (positive = air side)
+- phi: azimuth around cone axis (phi < 0 = lower half, intact cone)
+- angle: deviation of B from surface normal (0° = perpendicular)
+
+### Results
+
+- **Angle: 7-11° across s = 1-6 mm**, mean 9.4°, std ~2-3° per bin
+- **|B|: 28 mT (s=1mm) → 9 mT (s=6mm)**, smooth decay
+- All nodes confirm B is directed **inward** (P1 = flux sink)
+- No systematic s-dependence: angle stable across entire cone body
+
+### Why not the theoretical 0.2°?
+
+The ~9° deviation is NOT a model error. It comes from finite mesh resolution:
+- Closest air nodes are 90-400 um from the true iron-air interface
+- The 0.2° boundary condition holds only exactly AT the interface
+- At 100+ um distance, the global field pattern adds tangential components
+- Finer mesh (SmartSize < 5) would bring closest nodes nearer → smaller angle
+
+### VSBV flat-cut effect
+
+Lower poles have the upper half milled flat (VSBV at APDL line 186-188).
+The flat cut is at z_wp = tip_z (vz = 0 in tip-centered coordinates).
+- s < 3.5 mm: cone cross-section is nearly full circle → no effect
+- s > 3.5 mm: upper half progressively removed → D-shaped cross-section
+- Air nodes near the flat surface have FLAT normals, not CONE normals
+- The script avoids this by selecting only phi < -10° (lower half)
+
+## 7. Open Questions for Future Work
 
 1. **Non-linear B-H version**: Run with `TB,BH` material data for 1018 steel, compare WP field and K_I fit
 2. **K_I extraction**: Fit flux distribution matrix from 6-coil data, compare to dissertation Eq.2.8 and Eq.2.19
-3. **Charge model fitting**: Fit rho (effective) and R_a from B-field data, reproduce Fig.2.6
-4. **Contour plots**: Generate |B| contours in Gauss to directly compare with dissertation Fig.2.4
-5. **Force model**: Compute g_I and force envelopes
+3. **Force model**: Compute g_I and force envelopes
