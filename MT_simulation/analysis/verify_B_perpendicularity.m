@@ -36,7 +36,7 @@ y_wp = data.y;
 z_wp = data.z - cnst.SPH_OFST;
 
 %% 2. Select nodes within fine mesh sphere (7 mm)
-SPH_FINE_R = 7e-3;  % [m]
+SPH_FINE_R = 7e-3;  % [m] — matches original APDL SPH_FINE_R (use 10e-3 for sph10 data)
 r_wp = sqrt(x_wp.^2 + y_wp.^2 + z_wp.^2);
 in_sphere = r_wp < SPH_FINE_R;
 idx_sph = find(in_sphere);
