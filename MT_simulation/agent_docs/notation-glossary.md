@@ -136,6 +136,35 @@ Physical meaning: when coil j is excited with MMF = N_c * I_j, pole j gets 5/6 o
 
 **Important**: Dissertation Fig. 2.4 contour plots use **Gauss**. When comparing our mT plots: **1 mT = 10 Gauss**.
 
+## Model / Fitting Variables
+
+Mapping between dissertation notation, MATLAB variable names, and their roles in the fitting pipeline.
+
+| Concept | Paper Symbol | MATLAB Variable | Dimension | Notes |
+|---|---|---|---|---|
+| Charge position | c_i | `pos(:,i)` | 3x6 | c_i = ell * d_hat_i + delta_i |
+| Baseline sphere radius | ell (script L) | `ell` or `ell_fixed` | scalar | Shared across all methods |
+| Bias/offset vector | b_i | `delta(:,i)` | 3x6 | Code uses `delta` to avoid confusion with `b_fem` |
+| Direction unit vector | d_hat_i | `d_hat(:,i)` | 3x6 | WP center -> pole tip direction, fixed by geometry |
+| Air reluctance | R_a | `R_a` or `R_a_k` | scalar or 6x1 | Per-coil when using C_k; shared when using C |
+| Lumped amplitude | C = N_c/(mu_0*R_a) | `C` or `C_k` | scalar or 6x1 | VarPro solves analytically |
+| Magnetic charge vector | Q | `-(N_c/(mu_0*R_a))*K_I*I_vec` | 6x1 | Implicit in code |
+| Flux distribution matrix | K_I | `K_I` | 6x6 | = I_6 - ones(6)/6 (nominal, Eq. 2.8) |
+| Current vector (model) | I_diss | `I_vec` | 6x1 | Includes coil_sign correction |
+| Weight vector | w | `w` = K_I * I_vec | 6x1 | Determines per-pole contribution |
+| Coil sign correction | — | `coil_sign` | scalar | +1 (lower), -1 (upper); see coil-winding-sign-convention.md |
+
+## Fitting Methods
+
+| Tag | Description | Data | Nonlinear DOF | Analytic DOF | Script |
+|---|---|---|---|---|---|
+| [A] | Shared ell, b=0 | 1 coil | 1 (ell) | 1 (C -> R_a) | `fit_charge_model.m` |
+| [a] | Per-pole ell_i, b=0 | 1 coil | 6 (ell_i) | 1 (C -> R_a) | (inline in test script) |
+| [J] | Free 3D positions | 6 coils joint | 18 (3x6 coords) | 6 (C_k) | (test script) |
+| [D] | ell(fixed) + delta(3D) | 6 coils joint | 18 (delta) | 6 (C_k) | `fit_ell_delta_6coil.m` |
+| [B-sc] | ell(fixed) + delta(3D), shared C | 1 coil | 18 (delta) | 1 (C) | `fit_single_coil_with_bias.m` |
+| [B-6x] | ell(fixed) + delta(3D), shared C | all6 | 18 (delta) | 1 (C) | `fit_all6_with_bias.m` |
+
 ## ANSYS-Specific Terms (Not in Dissertation)
 
 | Term | Description (ZH) | Why Needed |

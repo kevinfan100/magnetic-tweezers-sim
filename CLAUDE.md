@@ -33,11 +33,15 @@ KevinFan/                            Git root
 │   └── notes/                       Structured Markdown notes (tracked)
 └── MT_simulation/                   Magnetic tweezers simulation project
     ├── MT_..._Coil[1-6].txt        APDL scripts (only CURR_ARRAY differs)
+    ├── post_extract_coil[1-6].txt  POST1 extraction scripts
     ├── results/coil[1-6]/           ANSYS output files (gitignored, ~10GB)
-    ├── agent_docs/                  Detailed documentation for Claude Code
-    ├── analysis/                    MATLAB post-processing scripts (future)
-    ├── data/                        Processed data: .mat, .csv (tracked)
-    └── figures/                     Publication figures: .png, .eps (tracked)
+    ├── agent_docs/                  Technical documentation for Claude Code
+    ├── analysis/                    MATLAB fitting & figure scripts
+    │   ├── fit_charge_model.m       [A] baseline (ell, R_a)
+    │   ├── test_joint_6coil_fit.m   [J] 6-coil joint free-3D
+    │   └── fit_all6_with_bias.m     [B-6x] all-excitation ★ final
+    ├── data/                        Fitting results: .mat (tracked)
+    └── figures/                     Publication figures: .png (tracked)
 ```
 
 ## Rules
@@ -78,8 +82,11 @@ Key conventions:
 - Units: ANSYS outputs Tesla; figures use mT for WP region; dissertation Fig. 2.4 uses Gauss (1 mT = 10 Gauss)
 
 ## Detailed Docs
-- `MT_simulation/agent_docs/model-validation.md` - **APDL vs dissertation comparison, all issues documented**
+- `MT_simulation/agent_docs/fitting-methods.md` - **[A]→[J]→[B-6x] fitting methods, [B-6x] is final**
+- `MT_simulation/agent_docs/model-validation.md` - APDL vs dissertation comparison
 - `MT_simulation/agent_docs/notation-glossary.md` - unified notation, dissertation alignment
+- `MT_simulation/agent_docs/coil-winding-sign-convention.md` - pole polarity & coil_sign correction
+- `MT_simulation/agent_docs/charge-model-fitting.md` - point-charge model derivation
 - `MT_simulation/agent_docs/ansys-environment.md` - ANSYS install, batch mode, hardware
 - `MT_simulation/agent_docs/simulation-parameters.md` - geometry, materials, mesh, solver
 - `MT_simulation/agent_docs/workflow.md` - 4-stage simulation-to-publication pipeline

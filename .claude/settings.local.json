@@ -1,13 +1,15 @@
 {
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "matlab"
-  ],
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
       "Bash(*)",
-      "mcp__matlab__*"
+      "mcp__matlab__*",
+      "mcp__perplexity__perplexity_search",
+      "mcp__perplexity__perplexity_ask"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "matlab"
+  ]
 }
