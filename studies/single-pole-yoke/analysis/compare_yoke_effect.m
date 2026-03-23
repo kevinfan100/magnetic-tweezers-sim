@@ -8,7 +8,7 @@
 clear; close all; clc;
 script_dir = fileparts(mfilename('fullpath'));
 addpath(script_dir);  % ensure analysis/ is on path
-base_dir = fullfile(script_dir, '..');  % MT_simulation/
+base_dir = fullfile(script_dir, '..');  % studies/single-pole-yoke/
 
 c = mt_constants();
 

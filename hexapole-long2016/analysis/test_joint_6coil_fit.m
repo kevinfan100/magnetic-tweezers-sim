@@ -9,7 +9,7 @@
 %  effectively means 18 optimized + 1 R_a per coil (6 total), but the
 %  optimizer only sees 18 variables.
 %
-%  Run from MT_simulation/analysis/ directory.
+%  Run from hexapole-long2016/analysis/ directory.
 
 clear; clc; close all;
 

@@ -1,5 +1,5 @@
 ---
-globs: ["MT_simulation/*.txt"]
+globs: ["hexapole-long2016/apdl/*.txt", "studies/*/apdl/*.txt"]
 ---
 
 # APDL Script Editing Rules

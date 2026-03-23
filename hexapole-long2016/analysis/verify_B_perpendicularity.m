@@ -20,7 +20,7 @@
 %    angle — deviation of B from surface normal [deg]
 %            (0° = B perfectly perpendicular to surface)
 %
-%  Run from MT_simulation/analysis/ directory.
+%  Run from hexapole-long2016/analysis/ directory.
 
 clear; clc; close all;
 
