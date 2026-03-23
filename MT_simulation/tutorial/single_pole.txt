@@ -46,3 +46,242 @@ CYL4, 0, 0, YOKE_IN_R, 0, YOKE_OUT_R, 360, YOKE_H
 VPLOT                         ! plot all volumes -> should see a flat donut
 
 ! === END STEP 1 =============================================
+
+
+! === STEP 2: Protrusion + VADD (boolean unite) ================
+! Learn: WPOFFS (work plane offset), CYL4 with negative DEPTH,
+!        VADD (unite volumes), WPLANE/WPcsys (reset work plane)
+! Build: solid cylinder protruding downward from yoke
+! ============================================================
+
+! --- 2a. Define protrusion parameters -------------------------
+YOKE_MID_R = (YOKE_IN_R + YOKE_OUT_R)/2.0   ! center of yoke wall = 47.5 mm
+PROT_R     = 10.0e-3/2.0                     ! protrusion radius = 5 mm
+PROT_H     = 7.0e-3                          ! protrusion height = 7 mm
+
+! --- 2b. Reset work plane to global origin --------------------
+! Before creating new geometry, always reset the work plane
+! so we know exactly where we are.
+WPLANE, 1, 0,0,0, , , , , ,       ! move WP origin to (0,0,0)
+WPcsys, -1, 0                     ! align WP to global Cartesian CS
+
+! --- 2c. Create protrusion cylinder ---------------------------
+! The protrusion sits at the yoke's mid-radius (X=47.5mm, Y=0)
+! and extends DOWNWARD from the yoke bottom face (Z=0).
+!
+! Key insight: DEPTH can be NEGATIVE.
+!   Positive DEPTH -> cylinder grows upward (+Z)
+!   Negative DEPTH -> cylinder grows downward (-Z)
+!
+!   Side view:
+!         Z=0  ┌────────────────┐  yoke bottom face
+!              │  protrusion    │
+!              │  (solid cyl)   │
+!     Z=-7mm   └────────────────┘
+!              ↑ center at X = YOKE_MID_R = 47.5mm
+!
+CYL4, YOKE_MID_R, 0, PROT_R, , , , -PROT_H
+
+! --- 2d. Unite yoke + protrusion into one solid ---------------
+! VADD merges multiple volumes into a single volume.
+! After VADD, the original volumes are deleted and replaced
+! by one new volume with a new number.
+!
+!   Before VADD:  Volume 1 (yoke) + Volume 2 (protrusion)
+!   After  VADD:  Volume 3 (combined) -- old 1,2 are gone
+!
+VADD, ALL
+
+! --- 2e. Verify: plot and check -------------------------------
+/VIEW,1,1,1,1                     ! isometric view
+/AUTO,1
+VPLOT                              ! should see yoke with one cylinder hanging down
+
+! === END STEP 2 ===============================================
+
+
+! === STEP 3: Pole — iron cone with rounded tip ================
+! Learn: BLOCK (rectangular box), K (keypoints), L/LARC (lines),
+!        AL (area from lines), VROTAT (revolve to 3D),
+!        *get/numstr (entity number tracking),
+!        FLST/FITEM (pick-list for VADD), VSBV (boolean cut)
+! Build: pole holder + cone with fillet tip, united with yoke,
+!        then cut lower pole flat (mill)
+! ============================================================
+
+! --- 3a. Pole parameters -------------------------------------
+R_norm    = 500e-6                ! workspace radius = 500 um
+R_norm_xy = R_norm*sqrt(2.0/3.0) ! XY projection = ~408 um
+
+POLE_R        = 6.0e-3/2         ! pole body radius = 3 mm
+POLE_TIP_R    = 40.0e-6          ! tip fillet radius = 40 um
+POLE_CONE_LEN = 15e-3            ! cone length = 15 mm
+
+! Derived: tip fillet geometry
+! The tip is not a sharp point -- it has a small spherical fillet.
+! These parameters define how the fillet connects to the cone.
+POLE_CONE_HYP = sqrt(POLE_CONE_LEN**2 + POLE_R**2)
+ANG1 = acos(POLE_R/POLE_CONE_HYP)
+ANG2 = 90 - ANG1
+FILLET_L          = POLE_CONE_LEN*POLE_TIP_R/POLE_R
+POLE_TIP_CENTER   = FILLET_L/cos(ANG2)
+POLE_CONE2_LEN    = FILLET_L*cos(ANG2)
+POLE_TIP_R2       = POLE_TIP_R*cos(ANG2)
+POLE_TIP_FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R
+POLE_TIP_FILLET_PROT = POLE_CONE2_LEN - POLE_TIP_FILLET_DROP
+
+! --- 3b. Pole position: P1 (lower pole at 0 degrees) ---------
+ROTA_ANG = 0
+X0_LOW = YOKE_MID_R*cos(ROTA_ANG)   ! = 47.5 mm
+Y0_LOW = YOKE_MID_R*sin(ROTA_ANG)   ! = 0
+Z0_LOW = -PROT_H                    ! = -7 mm
+
+! Remember current volume count (yoke+prot from Step 2)
+*get, VL_NUM, VOLU, , NUM, MAX
+VL_START = VL_NUM + 1
+numstr, VOLU, VL_START            ! force new volumes to start from VL_NUM+1
+! Without numstr, APDL reuses deleted volume numbers (1,2 from Step 2),
+! and the FLST/FITEM range later would miss them.
+
+! --- 3c. Pole holder blocks -----------------------------------
+! The holder is an L-shaped structure below the protrusion.
+! BLOCK creates a rectangular box.
+! Syntax: BLOCK, X1, X2, Y1, Y2, Z1, Z2
+!
+!   Side view (XZ plane):
+!
+!   Z0_LOW=-7mm  ─────┬────────────┬─── protrusion bottom
+!                      │            │
+!                 B3+B4│    B1      │
+!                      │ (main box) │
+!   Z0_LOW-10mm  ──┬──┴────────────┴───
+!                  │       B2           │
+!   Z0_LOW-10mm  ──┴────────────────────┘
+!               X0-10   X0-5  X0-2     X0+11
+!
+BLOCK, X0_LOW - 5e-3,  X0_LOW + 11e-3, Y0_LOW - 5e-3,  Y0_LOW + 5e-3,  Z0_LOW - 10e-3, Z0_LOW
+BLOCK, X0_LOW - 5e-3,  X0_LOW - 2e-3,  Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 10e-3, Z0_LOW - 5e-3
+BLOCK, X0_LOW - 10e-3, X0_LOW - 2e-3,  Y0_LOW - 5e-3,  Y0_LOW + 5e-3,  Z0_LOW - 10e-3, Z0_LOW - 2e-3
+BLOCK, X0_LOW - 10e-3, X0_LOW - 5e-3,  Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 10e-3, Z0_LOW - 5e-3
+
+! --- 3d. Define 2D pole profile (keypoints) -------------------
+! The pole cone is created by:
+!   1. Define a 2D cross-section (5 keypoints + 1 arc center)
+!   2. Connect them with lines to form a closed area
+!   3. Revolve that area around the pole axis -> 3D solid
+!
+! Cross-section of pole (in the plane containing the pole axis):
+!
+!       KP1 (tip center, on axis)
+!        │\
+!        │ KP2 (where fillet meets cone)
+!        │   \
+!        │     \   <- cone wall
+!        │      KP3 (where cone meets full radius)
+!        │      │
+!        │      KP4 (end of body, full radius)
+!        │
+!       KP5 (on axis, at body end)
+!
+!       KP6 = center point for the tip fillet arc
+!
+! *get: read current max keypoint/line number
+! numstr: set starting number for next keypoint/line
+*get, KP_NUM, KP, , NUM, MAX
+*get, LI_NUM, LINE, , NUM, MAX
+KP_START = KP_NUM + 1
+LI_START = LI_NUM + 1
+numstr, KP, KP_START
+numstr, LINE, LI_START
+
+! Compute keypoint positions (distance + angle from origin)
+l1 = R_norm_xy
+l1_ang = atan2(0, R_norm_xy)
+
+l2 = sqrt((R_norm_xy + POLE_TIP_FILLET_PROT)**2 + POLE_TIP_R2**2)
+l2_ang = atan2(POLE_TIP_R2, (R_norm_xy + POLE_TIP_FILLET_PROT))
+
+POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + (R_norm_xy - POLE_TIP_FILLET_DROP)
+l3 = sqrt(POLE_CONE_LEN_SHIFT**2 + POLE_R**2)
+l3_ang = atan2(POLE_R, POLE_CONE_LEN)
+
+l4 = sqrt((X0_LOW - 10e-3)**2 + POLE_R**2)
+l4_ang = atan2(POLE_R, (X0_LOW - 10e-3))
+
+l5 = abs(X0_LOW - 10e-3)
+l5_ang = atan2(0, (X0_LOW - 10e-3))
+
+l6 = abs(R_norm_xy + POLE_TIP_R)
+l6_ang = atan2(0, R_norm_xy + POLE_TIP_R)
+
+! Create keypoints (all at Z = Z0_LOW - 6mm = pole axis height)
+K, , l1*cos(ROTA_ANG + l1_ang), l1*sin(ROTA_ANG + l1_ang), Z0_LOW - 6e-3
+K, , l2*cos(ROTA_ANG + l2_ang), l2*sin(ROTA_ANG + l2_ang), Z0_LOW - 6e-3
+K, , l3*cos(ROTA_ANG + l3_ang), l3*sin(ROTA_ANG + l3_ang), Z0_LOW - 6e-3
+K, , l4*cos(ROTA_ANG + l4_ang), l4*sin(ROTA_ANG + l4_ang), Z0_LOW - 6e-3
+K, , l5*cos(ROTA_ANG + l5_ang), l5*sin(ROTA_ANG + l5_ang), Z0_LOW - 6e-3
+K, , l6*cos(ROTA_ANG + l6_ang), l6*sin(ROTA_ANG + l6_ang), Z0_LOW - 6e-3
+
+! --- 3e. Connect keypoints with lines -------------------------
+LARC, KP_START, KP_START + 1, KP_START + 5, POLE_TIP_R   ! tip fillet arc
+L, KP_START + 1, KP_START + 2                             ! cone wall
+L, KP_START + 2, KP_START + 3                             ! body wall
+L, KP_START + 3, KP_START + 4                             ! back wall
+L, KP_START + 4, KP_START                                 ! axis (closing)
+
+! --- 3f. Create area from lines, then revolve -----------------
+*get, AR_NUM, AREA, , NUM, MAX
+AR_START = AR_NUM + 1
+numstr, AREA, AR_START
+
+! AL creates an area bounded by lines
+AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3, LI_START + 4
+
+! VROTAT revolves the 2D area around an axis to create a 3D solid
+! Axis: KP_START (tip) to KP_START+4 (body end) = pole centerline
+! Divisions: 4 (APDL splits 360 degrees into 4 quarter-volumes)
+VROTAT, AR_START, , , , , , KP_START, KP_START + 4, , 4
+
+! --- 3g. Unite all pole pieces --------------------------------
+! Merge holder blocks + revolved cone into one volume.
+!
+! FLST/FITEM: defines a "pick list" -- a range of volumes to operate on
+!   FLST,2, count, 6, ORDE, 2   -> prepare list: count items, type 6=volume
+!   FITEM,2, first              -> first volume number
+!   FITEM,2, -last              -> to last volume number (negative = range end)
+!   VADD, P51X                  -> apply VADD to the pick list
+*get, vl_ind_temp, VOLU, , NUM, MAX
+VL_START = VL_NUM + 1
+
+FLST, 2, (vl_ind_temp - VL_START + 1), 6, ORDE, 2
+FITEM, 2, VL_START
+FITEM, 2, -vl_ind_temp
+VADD, P51X
+
+! --- 3h. Unite pole with yoke+protrusion ----------------------
+*get, vol_pole_ind, VOLU, , NUM, MAX
+VADD, VL_NUM, vol_pole_ind
+
+! --- 3i. Cut lower pole flat (mill) --------------------------
+! Lower poles are milled flat: remove the UPPER half of the cone.
+! VSBV, A, B = subtract volume B from volume A (B is deleted)
+!
+!   Before VSBV:              After VSBV:
+!
+!   ─── Z0_LOW ───            ─── Z0_LOW ───
+!       ╱    ╲                    ╱    ╲
+!      ╱ upper ╲   ← removed    ╱______╲  ← flat top
+!   ──╱────axis──╲──          ──╱────axis──╲──
+!      ╲ lower ╱                ╲ lower ╱  ← kept
+!       ╲    ╱                   ╲    ╱
+!
+*get, vol_unite_ind, VOLU, , NUM, MAX
+BLOCK, 0, X0_LOW - 10e-3, Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 6e-3, Z0_LOW
+VSBV, vol_unite_ind, vol_unite_ind + 1
+
+! --- 3j. Verify -----------------------------------------------
+/VIEW, 1, 0, -1, 0               ! front view (XZ plane) to see pole
+/AUTO, 1
+VPLOT
+
+! === END STEP 3 ===============================================
