@@ -1,0 +1,387 @@
+! ================================================================
+! [ADDED] Single Pole With Yoke (Case B) — P1 pole + coil + yoke
+! Purpose: Single pole with yoke return path, no other poles
+! Based on MT_Modeling_Geometry_Meshing_Solving_Coil1.txt
+! ================================================================
+/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan-singlepole\MT_simulation\results\singlepole_yoke'
+
+Finish
+/cle
+
+/CLEAR,NOSTART
+
+/TITLE, Single Pole With Yoke - P1 pole + yoke magnetic field analysis
+/FILNAME,singlepole_yoke,1
+
+/PREP7
+
+
+! **** Change BackGround color to white: ****
+/RGB,INDEX,100,100,100, 0
+/RGB,INDEX, 80, 80, 80,13
+/RGB,INDEX, 60, 60, 60,14
+/RGB,INDEX, 0, 0, 0,15
+/REPLOT
+
+! -------------------------------
+! ******** MODELING: ************
+! -------------------------------
+MESH_SIZE = 5
+
+*afun, DEG   !----Using degree
+BTOL, 1e-6   !----BoOL tolerence
+/UNITS, MKS
+
+R_norm    = 500e-6       !----working radius
+R_norm_xy = R_norm*sqrt(2.0/3.0)
+R_norm_z  = R_norm/sqrt(3.0)
+
+YOKE_IN_R  = 84e-3/2.0    !----Inner radius of yoke
+YOKE_OUT_R = 106e-3/2.0
+YOKE_MID_R = (YOKE_IN_R + YOKE_OUT_R)/2.0
+YOKE_H     = 2.0e-3
+PROT_R     = 10.0e-3/2.0
+PROT_H     = 7.0e-3
+
+POLE_R        = 6.0e-3/2
+POLE_TIP_R    = 40.0e-6    !----40um
+POLE_CONE_LEN = 15e-3
+POLE_CONE_HYP = sqrt(POLE_CONE_LEN**2 + POLE_R**2)
+ANG1 = acos(POLE_R/POLE_CONE_HYP)
+ANG2 = 90 - ANG1
+L = POLE_CONE_LEN*POLE_TIP_R/POLE_R
+POLE_TIP_CENTER = L/cos(ANG2)
+POLE_CONE2_LEN  = L*cos(ANG2)
+POLE_TIP_R2     = POLE_TIP_R*cos(ANG2)
+POLE_TIP_FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R
+POLE_TIP_FILLET_PROT = (POLE_CONE2_LEN - POLE_TIP_FILLET_DROP)
+
+MT_CTR_ZOFST = -PROT_H - 6.0e-3 + R_norm_z
+
+
+! -----------------------------------------------
+! [ADDED] Yoke ring + single protrusion (P1 only)
+! Full 360-degree yoke ring with 1 lower protrusion at 0 degrees
+! -----------------------------------------------
+WPLANE, 1,0,0,0,,,,,,
+WPcsys,-1,0
+
+! **** 1 yoke ring (full 360 degrees): ****
+CYL4,0,0,YOKE_IN_R,0,YOKE_OUT_R,360,YOKE_H
+
+! **** 1 protrusion at 0 degrees (lower, pointing downward): ****
+WPLANE,1,0,0,0,,,,,,
+WPcsys,-1,0
+CYL4,YOKE_MID_R*cos(0),YOKE_MID_R*sin(0),PROT_R, ,,,-PROT_H
+
+! **** Unite yoke and protrusion: ****
+FLST,2, 2, 6,ORDE, 2
+FITEM,2, 1
+FITEM,2,-2
+VADD,P51X
+
+*get, vol_yoke_ind, VOLU,,NUM, MAX
+
+
+! -----------------------------------------------
+! [ADDED] Single lower pole P1 (ROTA_ANG = 0)
+! Same geometry as original, connected to yoke via protrusion
+! -----------------------------------------------
+X0_LOW = YOKE_MID_R*cos(0)
+Y0_LOW = YOKE_MID_R*sin(0)
+Z0_LOW = -PROT_H
+
+WPLANE, 1,0,0,0,,,,,,
+WPcsys,-1,0
+ROTA_ANG = 0
+WPROTA, ROTA_ANG,    !----Rotate about z axis (0 degrees for P1)
+
+*get, VL_NUM, VOLU, ,NUM, MAX
+VL_START = VL_NUM + 1
+numstr, VOLU, VL_START
+
+! **** Lower pole holder: ****
+BLOCK, X0_LOW - 5e-3,  X0_LOW + 11e-3, Y0_LOW - 5e-3,  Y0_LOW + 5e-3,  Z0_LOW - 10e-3, Z0_LOW
+BLOCK, X0_LOW - 5e-3,  X0_LOW - 2e-3,  Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 10e-3, Z0_LOW - 5e-3
+BLOCK, X0_LOW - 10e-3, X0_LOW - 2e-3,  Y0_LOW - 5e-3,  Y0_LOW + 5e-3,  Z0_LOW - 10e-3, Z0_LOW - 2e-3
+BLOCK, X0_LOW - 10e-3, X0_LOW - 5e-3,  Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 10e-3, Z0_LOW - 5e-3
+
+! **** Key points & line: ****
+*get, KP_NUM, KP  , ,NUM, MAX
+*get, LI_NUM, LINE, ,NUM, MAX
+KP_START = KP_NUM + 1
+LI_START = LI_NUM + 1
+numstr, KP,   KP_START
+numstr, LINE, LI_START
+
+l1 = R_norm_xy
+l1_ang = atan2( 0 , R_norm_xy )
+
+l2 = sqrt( (R_norm_xy + POLE_TIP_FILLET_PROT)**2 + POLE_TIP_R2**2 )
+l2_ang = atan2( POLE_TIP_R2 , (R_norm_xy + POLE_TIP_FILLET_PROT) )
+
+POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + (R_norm_xy - POLE_TIP_FILLET_DROP)
+l3 = sqrt( POLE_CONE_LEN_SHIFT**2 + POLE_R**2 )
+l3_ang = atan2( POLE_R , POLE_CONE_LEN )
+
+l4 = sqrt( (X0_LOW - 10e-3)**2 + POLE_R**2 )
+l4_ang = atan2( POLE_R , (X0_LOW - 10e-3) )
+
+l5 = abs( X0_LOW - 10e-3 )
+l5_ang = atan2( 0 , (X0_LOW - 10e-3) )
+
+l6 = abs( R_norm_xy + POLE_TIP_R )
+l6_ang = atan2( 0, R_norm_xy + POLE_TIP_R )
+
+K , , l1*cos(ROTA_ANG + l1_ang) , l1*sin(ROTA_ANG + l1_ang), Z0_LOW - 6e-3
+K , , l2*cos(ROTA_ANG + l2_ang) , l2*sin(ROTA_ANG + l2_ang), Z0_LOW - 6e-3
+K , , l3*cos(ROTA_ANG + l3_ang) , l3*sin(ROTA_ANG + l3_ang), Z0_LOW - 6e-3
+K , , l4*cos(ROTA_ANG + l4_ang) , l4*sin(ROTA_ANG + l4_ang), Z0_LOW - 6e-3
+K , , l5*cos(ROTA_ANG + l5_ang) , l5*sin(ROTA_ANG + l5_ang), Z0_LOW - 6e-3
+K , , l6*cos(ROTA_ANG + l6_ang) , l6*sin(ROTA_ANG + l6_ang), Z0_LOW - 6e-3  !---- for arc generation
+
+LARC , KP_START , KP_START + 1 , KP_START + 5 , POLE_TIP_R
+L , KP_START + 1 , KP_START + 2,,,,,,,,
+L , KP_START + 2 , KP_START + 3,,,,,,,,
+L , KP_START + 3 , KP_START + 4,,,,,,,,
+L , KP_START + 4 , KP_START,,,,,,,,
+
+! **** Create Area: ****
+*get, AR_NUM, AREA, ,NUM, MAX
+AR_START = AR_NUM + 1
+numstr, AREA, AR_START
+
+AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3, LI_START + 4
+
+! **** Rotate area to get volume: ****
+VROTAT, AR_START, ,,,,,KP_START,KP_START + 4,,4
+
+! **** Unite the volumes (holder blocks + cone): ****
+*get, vl_ind_temp, VOLU,,NUM,MAX
+FLST,2,(vl_ind_temp - VL_START + 1),6,ORDE,2
+FITEM,2,VL_START
+FITEM,2,-vl_ind_temp
+VADD,P51X
+
+! [ADDED] Unite pole with yoke+protrusion (same as original line 182)
+*get, vol_pole_ind, VOLU,,NUM,MAX
+VADD, VL_NUM, vol_pole_ind
+
+! [ADDED] Compress volume numbers after VADD (freed intermediate volumes)
+! Without this, BLOCK reuses freed numbers and vol_unite_ind+1 points to wrong volume
+NUMCMP,VOLU
+
+! **** Mill flat (cut upper half of cone for lower pole): ****
+*get, vol_unite_ind, VOLU,,NUM,MAX
+
+BLOCK,0,X0_LOW - 10e-3,Y0_LOW - 10e-3,Y0_LOW + 10e-3,Z0_LOW - 6e-3, Z0_LOW
+
+VSBV, vol_unite_ind,vol_unite_ind + 1
+
+GPLOT
+
+
+! [ADDED] Compress volume numbering before air volumes
+NUMCMP,VOLU
+
+
+!--------------------------
+! **** Create Sphere: *****
+!--------------------------
+SPH_FINE_R = 7e-3    !----diameter of fine element
+SPH_OFST = Z0_LOW - 6e-3 + R_norm_z
+AIR_CYL_R = 80e-3
+AIR_CYL_H = 70e-3
+
+WPLANE, 1,0,0,0,,,,,,
+WPcsys,-1,0
+WPOFFS,0,0,SPH_OFST
+
+SPHERE, 0, SPH_FINE_R, 0,360  !---- fine sphere
+
+WPOFFS,0,0, -SPH_OFST + YOKE_H/2 - AIR_CYL_H/2
+CYL4,0,0,AIR_CYL_R, ,,,AIR_CYL_H   !----Outer Air Cylinder
+
+
+!-------------------
+! **** OverLap: ****
+!-------------------
+VOVLAP,ALL
+NUMCMP,VOLU
+
+! [ADDED] Get total volume count for diagnostic
+*get, TOTAL_VOLS, VOLU, , NUM, MAX
+
+/REPLOT
+VPLOT
+
+
+!-----------------------------
+! **** Magnetic analysis: ****
+!-----------------------------
+
+!**** material definition: ****
+MAT_AIR1 = 1   !----MAT number 1: Center air
+MAT_MT   = 2   !----MAT number 2: 1018 steel (pole + yoke)
+MAT_AIR2 = 3   !----MAT number 3: outer air
+mp , murx , MAT_AIR1 , 1     !----MAT NUM 1 : center air
+mp , murx , MAT_MT   , 280   !----MAT NUM 2 : 1018 steel
+mp , murx , MAT_AIR2 , 1     !----MAT NUM 3 : outer air
+
+!**** element definition: ****
+ET_nocurr = 1
+ET_curr   = 2
+ET , ET_nocurr , SOLID96
+ET , ET_curr   , SOURC36
+
+
+! --------------------------------------------------------
+! [ADDED] Automatic volume material assignment
+! Select each volume individually, run VSUM to get its centroid,
+! then classify as iron (pole+yoke), inner air (sphere), or outer air
+! Note: *GET VOLU,vid,CENT ignores vid — returns last VSUM result
+!       so VSEL + VSUM per volume is required
+! --------------------------------------------------------
+*do, vid, 1, TOTAL_VOLS
+	VSEL,S,VOLU,,vid
+	VSUM
+	*get, cx, VOLU, 0, CENT, X
+	*get, cz, VOLU, 0, CENT, Z
+
+	! Rule 1: centroid X > 1mm → iron (pole or yoke+protrusion fragment)
+	*if, cx, GT, 1e-3, THEN
+		VATT,MAT_MT,1,ET_nocurr
+	! Rule 2: centroid Z below sphere top → inner sphere air
+	*elseif, cz, LT, SPH_OFST + SPH_FINE_R, THEN
+		VATT,MAT_AIR1,1,ET_nocurr
+	! Rule 3: everything else → outer air cylinder
+	*else
+		VATT,MAT_AIR2,1,ET_nocurr
+	*endif
+*enddo
+
+
+!**** define current source (single coil at P1 position): *****
+COIL_OUT_R = 8e-3
+COIL_IN_R  = 5e-3
+TURNS = 70
+COIL_THK = COIL_OUT_R - COIL_IN_R
+COIL_R = (COIL_IN_R + COIL_OUT_R)/2
+COIL_H = PROT_H
+R,1,1,TURNS*1,COIL_THK,COIL_H   !----Real const set 1: coil with 1A excitation
+
+WPLANE, 1,0,0,0,,,,,,
+WPcsys,-1,0
+
+NUMCMP,NODE   !----compress node index
+
+*get, NODE_NUM,NODE,,NUM,MAX
+NODE_START = NODE_NUM + 1
+
+! **** Single lower coil at P1 (ROTA_ANG=0): ****
+X0_LOW = YOKE_MID_R*cos(0)
+Y0_LOW = YOKE_MID_R*sin(0)
+Z0_LOW = -PROT_H
+
+N , NODE_START     , X0_LOW + COIL_R , Y0_LOW          , Z0_LOW + COIL_H/2
+N , NODE_START + 1 , X0_LOW          , Y0_LOW + COIL_R , Z0_LOW + COIL_H/2
+N , NODE_START + 2 , X0_LOW          , Y0_LOW          , Z0_LOW + COIL_H/2
+TYPE,ET_curr   !----element type
+REAL,1         !----real const set num
+E,NODE_START,NODE_START + 1,NODE_START + 2
+/ESHAPE,1
+
+
+! **** mesh: ****
+ALLSEL,ALL
+smrt,MESH_SIZE,,,,,,,,OFF,
+mshape,1,3D        !---- 1:mesh shape
+mshkey,0           !---- 0:free meshing(default)
+vmesh,all
+
+
+! **** Define component: ****
+ESEL,S,MAT,,MAT_MT
+CM,COMP_MT,ELEM
+
+ESEL,S,MAT,,MAT_AIR1
+CM,COMP_AIR1,ELEM
+
+ESEL,S,MAT,,MAT_AIR2
+CM,COMP_AIR2,ELEM
+
+/REPLOT
+
+
+! ------------------------------------------------
+! [ADDED] Apply far-field boundary condition
+! Set MAG=0 on outer air cylinder boundary surfaces
+! so the DSP method (magsolv,3) has a unique solution
+! ------------------------------------------------
+AIR_CYL_Z_CTR = YOKE_H/2
+AIR_CYL_Z_BOT = AIR_CYL_Z_CTR - AIR_CYL_H/2
+AIR_CYL_Z_TOP = AIR_CYL_Z_CTR + AIR_CYL_H/2
+
+! Select nodes on lateral cylindrical surface (R = AIR_CYL_R)
+LOCAL,11,1,0,0,0                                          ! define local cylindrical CS
+CSYS,11                                                    ! activate cylindrical CS
+NSEL,S,LOC,X, AIR_CYL_R - 0.5e-3, AIR_CYL_R + 0.5e-3    ! select nodes at R ~ 80mm
+CSYS,0                                                     ! switch back to Cartesian
+
+! Also select nodes on top and bottom flat caps
+NSEL,A,LOC,Z, AIR_CYL_Z_TOP - 0.5e-3, AIR_CYL_Z_TOP + 0.5e-3
+NSEL,A,LOC,Z, AIR_CYL_Z_BOT - 0.5e-3, AIR_CYL_Z_BOT + 0.5e-3
+
+! Apply MAG=0 boundary condition on all selected nodes
+D,ALL,MAG,0
+ALLSEL,ALL
+
+
+!-------------------
+! **** solving: ****
+!-------------------
+ALLSEL,ALL
+/SOLU
+magsolv,3,,,,,1
+SAVE
+
+FINISH
+
+
+! --------------------------------
+! [ADDED] POST1 data extraction
+! --------------------------------
+/POST1
+SET,LAST
+ALLSEL,ALL
+
+/HEADER,OFF,OFF,OFF,OFF,OFF,OFF
+/FORMAT,10,,20,12,,
+/PAGE,1000000,,1000000
+
+! Export all node coordinates (NODE, X, Y, Z)
+/OUTPUT,'sp_yoke_coord_all','dat'
+NLIST,ALL, , ,COORD
+/OUTPUT
+
+! Export B-field at all nodes (NODE, BX, BY, BZ, BSUM)
+/OUTPUT,'sp_yoke_bfield_all','dat'
+PRNSOL,B,COMP
+/OUTPUT
+
+! Working point region export (nodes within 2mm sphere)
+LOCAL,12,2, 0, 0, SPH_OFST    ! Spherical CS at working point center
+CSYS,12
+NSEL,S,LOC,X, 0, 2e-3         ! Select nodes with R < 2mm
+CSYS,0
+
+/OUTPUT,'sp_yoke_coord_wp','dat'
+NLIST,ALL, , ,COORD
+/OUTPUT
+
+/OUTPUT,'sp_yoke_bfield_wp','dat'
+PRNSOL,B,COMP
+/OUTPUT
+
+ALLSEL,ALL
+FINISH
