@@ -1,6 +1,6 @@
 !****/CWD,'C:\Users\feilong\Desktop\Fei Long Ansys\Magnetic Tweezers LowPermeability'
 !****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\MT_simulation\results\coil4'   ! [MODIFIED] output to MT_simulation/results/coil4
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hexapole-long2016\results\coil1'   ! [MODIFIED] output to MT_simulation/results/coil1
 
 Finish
 /cle
@@ -383,10 +383,10 @@ ET , ET_curr   , SOURC36
 COIL_OUT_R = 8e-3
 COIL_IN_R  = 5e-3
 *dim, CURR_ARRAY,,POLE_NUM
-CURR_ARRAY(1) = 0
+CURR_ARRAY(1) = 1
 CURR_ARRAY(2) = 0
 CURR_ARRAY(3) = 0
-CURR_ARRAY(4) = 1
+CURR_ARRAY(4) = 0
 CURR_ARRAY(5) = 0
 CURR_ARRAY(6) = 0
 TURNS = 70
@@ -524,42 +524,12 @@ ALLSEL,ALL
 ALLSEL,ALL
 /SOLU
 magsolv,3,,,,,1
-SAVE   ! [MODIFIED] Uncommented — preserve .db for future POST1 use
+!SAVE
 
 FINISH
 
 /POST1
-SET,LAST
-ALLSEL,ALL
-
-! [ADDED] Configure output format for data export
-/HEADER,OFF,OFF,OFF,OFF,OFF,OFF
-/FORMAT,10,,20,12,,
+/FORMAT,7,,17,9,1000000,
 /PAGE,1000000,,1000000
-
-! [ADDED] Export all node coordinates (NODE, X, Y, Z)
-/OUTPUT,'coil4_coord_all','dat'
-NLIST,ALL, , ,COORD
-/OUTPUT
-
-! [ADDED] Export B-field at all nodes (NODE, BX, BY, BZ, BSUM)
-/OUTPUT,'coil4_bfield_all','dat'
-PRNSOL,B,COMP
-/OUTPUT
-
-! [ADDED] Working point region export (nodes within 2mm sphere)
-LOCAL,12,2, 0, 0, SPH_OFST    ! Spherical CS at working point center
-CSYS,12
-NSEL,S,LOC,X, 0, 2e-3         ! Select nodes with R < 2mm
-CSYS,0
-
-/OUTPUT,'coil4_coord_wp','dat'
-NLIST,ALL, , ,COORD
-/OUTPUT
-
-/OUTPUT,'coil4_bfield_wp','dat'
-PRNSOL,B,COMP
-/OUTPUT
-
-ALLSEL,ALL
-FINISH
+!NLIST,ALL,,,COORD
+!PRNSOL,B

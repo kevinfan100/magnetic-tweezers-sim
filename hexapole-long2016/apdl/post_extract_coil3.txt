@@ -1,5 +1,6 @@
+!****/CWD,'C:\Users\feilong\Desktop\Fei Long Ansys\Magnetic Tweezers LowPermeability'
 !****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\MT_simulation\results\coil6'   ! [MODIFIED] output to MT_simulation/results/coil6
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hexapole-long2016\results\coil3'   ! [MODIFIED] output to MT_simulation/results/coil3
 
 Finish
 /cle
@@ -58,6 +59,7 @@ POLE_TIP_R2     = POLE_TIP_R*cos(ANG2)
 POLE_TIP_FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R
 POLE_TIP_FILLET_PROT = (POLE_CONE2_LEN - POLE_TIP_FILLET_DROP)
 
+MT_CTR_ZOFST = -PROT_H - 6.0e-3 + R_norm_z
 
 ! -------------------------------
 ! ******* YOKE MODELING: ********
@@ -209,12 +211,12 @@ Z0_LOW = -PROT_H
 
 
 	! **** Upper pole holder: ****
-	BLoCK, X0_HIGH - 3.5e-3,  X0_HIGH + 8.5e-3, Y0_HIGH - 5e-3,  Y0_HIGH + 5e-3,  Z0_HIGH, Z0_HIGH + 10e-3
+	BLOCK, X0_HIGH - 3.5e-3,  X0_HIGH + 8.5e-3, Y0_HIGH - 5e-3,  Y0_HIGH + 5e-3,  Z0_HIGH, Z0_HIGH + 10e-3
 	BLOCK, X0_HIGH - 6.5e-3,  X0_HIGH - 3.5e-3, Y0_HIGH - 11e-3, Y0_HIGH + 11e-3, Z0_HIGH, Z0_HIGH + 10e-3
 	BLOCK, X0_HIGH - 16.5e-3, X0_HIGH - 6.5e-3, Y0_HIGH - 11e-3, Y0_HIGH + 11e-3, Z0_HIGH, Z0_HIGH + 10e-3
 
         tip_upper_x = R_norm_xy*cos(ROTA_ANG)
-        tip_Upper_y = R_norm_xy*sin(ROTA_ANG)
+        tip_upper_y = R_norm_xy*sin(ROTA_ANG)
 	tip_upper_z = Z0_LOW - 6e-3 + R_norm_z*2
 	
 	end_upper_x0 = X0_HIGH - 11.5e-3
@@ -222,7 +224,7 @@ Z0_LOW = -PROT_H
         end_upper_z0 = Z0_HIGH + 5e-3
 	end_upper_x = sqrt( end_upper_x0**2 + end_upper_y0**2 )*cos(ROTA_ANG)
 	end_upper_y = sqrt( end_upper_x0**2 + end_upper_y0**2 )*sin(ROTA_ANG)
-	end_upper_z = end_Upper_z0
+	end_upper_z = end_upper_z0
 
 	INCLINE_VECTORx = end_upper_x - tip_upper_x
 	INCLINE_VECTORy = end_upper_y - tip_upper_y
@@ -310,7 +312,7 @@ V_ID_MT = 1
 !--------------------------
 ! **** Create Sphere: *****
 !--------------------------
-SPH_FINE_R = 7e-3    !----5mm
+SPH_FINE_R = 7e-3    !----diameter of fine element
 SPH_OFST = Z0_LOW - 6e-3 + R_norm_z
 AIR_CYL_R = 80e-3
 AIR_CYL_H = 70e-3
@@ -383,10 +385,10 @@ COIL_IN_R  = 5e-3
 *dim, CURR_ARRAY,,POLE_NUM
 CURR_ARRAY(1) = 0
 CURR_ARRAY(2) = 0
-CURR_ARRAY(3) = 0
+CURR_ARRAY(3) = 1
 CURR_ARRAY(4) = 0
 CURR_ARRAY(5) = 0
-CURR_ARRAY(6) = 1
+CURR_ARRAY(6) = 0
 TURNS = 70
 COIL_THK = COIL_OUT_R - COIL_IN_R
 COIL_R = (COIL_IN_R + COIL_OUT_R)/2
@@ -447,12 +449,10 @@ NODE_START = NODE_NUM + 1
 *enddo
 
 
-
-
 ! **** mesh magnetic tweezers: ****
 VSEL,s,VOLU,,1,6           !----6 poles
 VSEL,a,VOLU,,8             !----magnetic tweezers
-VATT,MAT_MT,1,ET_nocurr    !----material atrribute : material num, real const set num, type num
+VATT,MAT_MT,1,ET_nocurr    !----material attribute : material num, real const set num, type num
 
 VSEL,s,VOLU,,V_ID_AIR_SPH  !----Inner air
 VATT,MAT_AIR1,1,ET_nocurr
@@ -466,30 +466,15 @@ mshape,1,3D        !---- 1:mesh shape
 mshkey,0           !---- 0:free meshing(defaul)
 vmesh,all
 
+! **** Define component: ****
+ESEL,S,MAT,,MAT_MT !if you want to plot this element, just use ESEL command and /replot
+CM,COMP_MT,ELEM  ! magnetic tweezers as a component
 
-!*get, ELEM_MT, ELEM, ,NUM, MAX
+ESEL,S,MAT,,MAT_AIR1
+CM,COMP_AIR1,ELEM  ! magnetic tweezers as a component
 
-! **** mesh center air: ****
-!VSEL,s,VOLU,,V_ID_AIR_SPH
-!VATT,MAT_AIR1,1,ET_nocurr
-!smrt,10
-!mshape,1,3D
-!mshkey,0
-!vmesh,all
-!*get, ELEM_temp, ELEM, ,NUM, MAX
-!ELEM_AIR_SPH = ELEM_temp - ELEM_MT
-
-
-! **** mesh outer air: ****
-!VSEL,s,VOLU,,V_ID_AIR_CYL
-!VATT,MAT_AIR2,1,ET_nocurr
-!smrt,10
-!mshape,1,3D
-!mshkey,0
-!vmesh,all
-!*get, ELEM_temp, ELEM, ,NUM, MAX
-!ELEM_AIR_CYL = ELEM_temp - (ELEM_AIR_SPH + ELEM_MT)
-
+ESEL,S,MAT,,MAT_AIR2
+CM,COMP_AIR2,ELEM  ! magnetic tweezers as a component
 
 
 !/COLOR , ELEM , BLUE , 1 , 1 , 1    !----coil
@@ -539,12 +524,42 @@ ALLSEL,ALL
 ALLSEL,ALL
 /SOLU
 magsolv,3,,,,,1
-!SAVE
+SAVE   ! [MODIFIED] Uncommented — preserve .db for future POST1 use
 
 FINISH
 
 /POST1
-/FORMAT,7,,17,9,1000000,
+SET,LAST
+ALLSEL,ALL
+
+! [ADDED] Configure output format for data export
+/HEADER,OFF,OFF,OFF,OFF,OFF,OFF
+/FORMAT,10,,20,12,,
 /PAGE,1000000,,1000000
-!NLIST,ALL,,,COORD
-!PRNSOL,B
+
+! [ADDED] Export all node coordinates (NODE, X, Y, Z)
+/OUTPUT,'coil3_coord_all','dat'
+NLIST,ALL, , ,COORD
+/OUTPUT
+
+! [ADDED] Export B-field at all nodes (NODE, BX, BY, BZ, BSUM)
+/OUTPUT,'coil3_bfield_all','dat'
+PRNSOL,B,COMP
+/OUTPUT
+
+! [ADDED] Working point region export (nodes within 2mm sphere)
+LOCAL,12,2, 0, 0, SPH_OFST    ! Spherical CS at working point center
+CSYS,12
+NSEL,S,LOC,X, 0, 2e-3         ! Select nodes with R < 2mm
+CSYS,0
+
+/OUTPUT,'coil3_coord_wp','dat'
+NLIST,ALL, , ,COORD
+/OUTPUT
+
+/OUTPUT,'coil3_bfield_wp','dat'
+PRNSOL,B,COMP
+/OUTPUT
+
+ALLSEL,ALL
+FINISH

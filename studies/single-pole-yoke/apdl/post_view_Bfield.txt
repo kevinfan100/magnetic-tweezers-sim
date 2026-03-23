@@ -4,7 +4,7 @@
 ! Usage:
 !   1. Open ANSYS GUI: MAPDL -g -np 4 -m 24000 -dir "results/singlepole_yoke" -j "singlepole_yoke"
 !   2. In ANSYS command input:
-!      /INPUT,'post_view_Bfield','txt','C:\Users\pmero\Documents\Lab406\KevinFan-singlepole\MT_simulation'
+!      /INPUT,'post_view_Bfield','txt','C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\studies\single-pole-yoke'
 !
 ! Change CASE_NAME to switch between Case A and Case B
 ! ================================================================

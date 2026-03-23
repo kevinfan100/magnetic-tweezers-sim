@@ -1,5 +1,5 @@
 !****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\MT_simulation\results\coil5_sph10'   ! [MODIFIED] output to MT_simulation/results/coil5_sph10
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hexapole-long2016\results\coil5_sph10'   ! [MODIFIED] output to MT_simulation/results/coil5_sph10
 
 Finish
 /cle

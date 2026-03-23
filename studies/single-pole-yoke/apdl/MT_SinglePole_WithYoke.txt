@@ -1,17 +1,17 @@
 ! ================================================================
-! [ADDED] Single Pole Only (Case A) — Bare P1 pole + coil, no yoke
-! Purpose: Isolate single pole field without yoke return path
+! [ADDED] Single Pole With Yoke (Case B) — P1 pole + coil + yoke
+! Purpose: Single pole with yoke return path, no other poles
 ! Based on MT_Modeling_Geometry_Meshing_Solving_Coil1.txt
 ! ================================================================
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan-singlepole\MT_simulation\results\singlepole_only'
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\studies\single-pole-yoke\results\singlepole_yoke'
 
 Finish
 /cle
 
 /CLEAR,NOSTART
 
-/TITLE, Single Pole Only - P1 bare pole magnetic field analysis
-/FILNAME,singlepole_only,1
+/TITLE, Single Pole With Yoke - P1 pole + yoke magnetic field analysis
+/FILNAME,singlepole_yoke,1
 
 /PREP7
 
@@ -36,7 +36,7 @@ R_norm    = 500e-6       !----working radius
 R_norm_xy = R_norm*sqrt(2.0/3.0)
 R_norm_z  = R_norm/sqrt(3.0)
 
-YOKE_IN_R  = 84e-3/2.0    !----Inner radius of yoke (kept for geometry reference)
+YOKE_IN_R  = 84e-3/2.0    !----Inner radius of yoke
 YOKE_OUT_R = 106e-3/2.0
 YOKE_MID_R = (YOKE_IN_R + YOKE_OUT_R)/2.0
 YOKE_H     = 2.0e-3
@@ -60,8 +60,32 @@ MT_CTR_ZOFST = -PROT_H - 6.0e-3 + R_norm_z
 
 
 ! -----------------------------------------------
+! [ADDED] Yoke ring + single protrusion (P1 only)
+! Full 360-degree yoke ring with 1 lower protrusion at 0 degrees
+! -----------------------------------------------
+WPLANE, 1,0,0,0,,,,,,
+WPcsys,-1,0
+
+! **** 1 yoke ring (full 360 degrees): ****
+CYL4,0,0,YOKE_IN_R,0,YOKE_OUT_R,360,YOKE_H
+
+! **** 1 protrusion at 0 degrees (lower, pointing downward): ****
+WPLANE,1,0,0,0,,,,,,
+WPcsys,-1,0
+CYL4,YOKE_MID_R*cos(0),YOKE_MID_R*sin(0),PROT_R, ,,,-PROT_H
+
+! **** Unite yoke and protrusion: ****
+FLST,2, 2, 6,ORDE, 2
+FITEM,2, 1
+FITEM,2,-2
+VADD,P51X
+
+*get, vol_yoke_ind, VOLU,,NUM, MAX
+
+
+! -----------------------------------------------
 ! [ADDED] Single lower pole P1 (ROTA_ANG = 0)
-! No yoke, no protrusions, no other poles
+! Same geometry as original, connected to yoke via protrusion
 ! -----------------------------------------------
 X0_LOW = YOKE_MID_R*cos(0)
 Y0_LOW = YOKE_MID_R*sin(0)
@@ -139,9 +163,11 @@ FITEM,2,VL_START
 FITEM,2,-vl_ind_temp
 VADD,P51X
 
-! [ADDED] No second VADD with yoke — this is bare pole only
+! [ADDED] Unite pole with yoke+protrusion (same as original line 182)
+*get, vol_pole_ind, VOLU,,NUM,MAX
+VADD, VL_NUM, vol_pole_ind
 
-! [ADDED] Compress volume numbers after VADD (freed V1-V8, only VADD result remains)
+! [ADDED] Compress volume numbers after VADD (freed intermediate volumes)
 ! Without this, BLOCK reuses freed numbers and vol_unite_ind+1 points to wrong volume
 NUMCMP,VOLU
 
@@ -196,7 +222,7 @@ VPLOT
 
 !**** material definition: ****
 MAT_AIR1 = 1   !----MAT number 1: Center air
-MAT_MT   = 2   !----MAT number 2: 1018 steel (pole)
+MAT_MT   = 2   !----MAT number 2: 1018 steel (pole + yoke)
 MAT_AIR2 = 3   !----MAT number 3: outer air
 mp , murx , MAT_AIR1 , 1     !----MAT NUM 1 : center air
 mp , murx , MAT_MT   , 280   !----MAT NUM 2 : 1018 steel
@@ -212,7 +238,7 @@ ET , ET_curr   , SOURC36
 ! --------------------------------------------------------
 ! [ADDED] Automatic volume material assignment
 ! Select each volume individually, run VSUM to get its centroid,
-! then classify as iron (pole), inner air (sphere), or outer air
+! then classify as iron (pole+yoke), inner air (sphere), or outer air
 ! Note: *GET VOLU,vid,CENT ignores vid — returns last VSUM result
 !       so VSEL + VSUM per volume is required
 ! --------------------------------------------------------
@@ -222,7 +248,7 @@ ET , ET_curr   , SOURC36
 	*get, cx, VOLU, 0, CENT, X
 	*get, cz, VOLU, 0, CENT, Z
 
-	! Rule 1: centroid X > 1mm → iron pole (extends along +x axis)
+	! Rule 1: centroid X > 1mm → iron (pole or yoke+protrusion fragment)
 	*if, cx, GT, 1e-3, THEN
 		VATT,MAT_MT,1,ET_nocurr
 	! Rule 2: centroid Z below sphere top → inner sphere air
@@ -334,12 +360,12 @@ ALLSEL,ALL
 /PAGE,1000000,,1000000
 
 ! Export all node coordinates (NODE, X, Y, Z)
-/OUTPUT,'sp_only_coord_all','dat'
+/OUTPUT,'sp_yoke_coord_all','dat'
 NLIST,ALL, , ,COORD
 /OUTPUT
 
 ! Export B-field at all nodes (NODE, BX, BY, BZ, BSUM)
-/OUTPUT,'sp_only_bfield_all','dat'
+/OUTPUT,'sp_yoke_bfield_all','dat'
 PRNSOL,B,COMP
 /OUTPUT
 
@@ -349,11 +375,11 @@ CSYS,12
 NSEL,S,LOC,X, 0, 2e-3         ! Select nodes with R < 2mm
 CSYS,0
 
-/OUTPUT,'sp_only_coord_wp','dat'
+/OUTPUT,'sp_yoke_coord_wp','dat'
 NLIST,ALL, , ,COORD
 /OUTPUT
 
-/OUTPUT,'sp_only_bfield_wp','dat'
+/OUTPUT,'sp_yoke_bfield_wp','dat'
 PRNSOL,B,COMP
 /OUTPUT
 

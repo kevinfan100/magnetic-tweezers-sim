@@ -1,6 +1,6 @@
 !****/CWD,'C:\Users\feilong\Desktop\Fei Long Ansys\Magnetic Tweezers LowPermeability'
 !****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\MT_simulation\results\coil6'   ! [MODIFIED] output to MT_simulation/results/coil6
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hexapole-long2016\results\coil5'   ! [MODIFIED] output to MT_simulation/results/coil5
 
 Finish
 /cle
@@ -312,7 +312,7 @@ V_ID_MT = 1
 !--------------------------
 ! **** Create Sphere: *****
 !--------------------------
-SPH_FINE_R = 7e-3    !----diameter of fine element
+SPH_FINE_R = 10e-3    !---- [MODIFIED] enlarged from 7e-3 for cone surface analysis
 SPH_OFST = Z0_LOW - 6e-3 + R_norm_z
 AIR_CYL_R = 80e-3
 AIR_CYL_H = 70e-3
@@ -387,8 +387,8 @@ CURR_ARRAY(1) = 0
 CURR_ARRAY(2) = 0
 CURR_ARRAY(3) = 0
 CURR_ARRAY(4) = 0
-CURR_ARRAY(5) = 0
-CURR_ARRAY(6) = 1
+CURR_ARRAY(5) = 1
+CURR_ARRAY(6) = 0
 TURNS = 70
 COIL_THK = COIL_OUT_R - COIL_IN_R
 COIL_R = (COIL_IN_R + COIL_OUT_R)/2
@@ -538,12 +538,12 @@ ALLSEL,ALL
 /PAGE,1000000,,1000000
 
 ! [ADDED] Export all node coordinates (NODE, X, Y, Z)
-/OUTPUT,'coil6_coord_all','dat'
+/OUTPUT,'coil5_sph10_coord_all','dat'
 NLIST,ALL, , ,COORD
 /OUTPUT
 
 ! [ADDED] Export B-field at all nodes (NODE, BX, BY, BZ, BSUM)
-/OUTPUT,'coil6_bfield_all','dat'
+/OUTPUT,'coil5_sph10_bfield_all','dat'
 PRNSOL,B,COMP
 /OUTPUT
 
@@ -553,11 +553,11 @@ CSYS,12
 NSEL,S,LOC,X, 0, 2e-3         ! Select nodes with R < 2mm
 CSYS,0
 
-/OUTPUT,'coil6_coord_wp','dat'
+/OUTPUT,'coil5_sph10_coord_wp','dat'
 NLIST,ALL, , ,COORD
 /OUTPUT
 
-/OUTPUT,'coil6_bfield_wp','dat'
+/OUTPUT,'coil5_sph10_bfield_wp','dat'
 PRNSOL,B,COMP
 /OUTPUT
 

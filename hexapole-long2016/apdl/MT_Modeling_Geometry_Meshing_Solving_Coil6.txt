@@ -1,5 +1,5 @@
 !****/CWD,'D:\Fei Long ANSYS\Magnetic Tweezers LowPermeability'
-/CWD,'C:\Users\pmero\Documents\Lab406\KevinFan\MT_simulation\results\coil3'   ! [MODIFIED] output to MT_simulation/results/coil3
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hexapole-long2016\results\coil6'   ! [MODIFIED] output to MT_simulation/results/coil6
 
 Finish
 /cle
@@ -383,10 +383,10 @@ COIL_IN_R  = 5e-3
 *dim, CURR_ARRAY,,POLE_NUM
 CURR_ARRAY(1) = 0
 CURR_ARRAY(2) = 0
-CURR_ARRAY(3) = 1
+CURR_ARRAY(3) = 0
 CURR_ARRAY(4) = 0
 CURR_ARRAY(5) = 0
-CURR_ARRAY(6) = 0
+CURR_ARRAY(6) = 1
 TURNS = 70
 COIL_THK = COIL_OUT_R - COIL_IN_R
 COIL_R = (COIL_IN_R + COIL_OUT_R)/2
