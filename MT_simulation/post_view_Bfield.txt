@@ -1,0 +1,202 @@
+! ================================================================
+! [ADDED] POST1 B-field visualization script (optimized)
+! Purpose: Generate readable B-field plots for single pole study
+! Usage:
+!   1. Open ANSYS GUI: MAPDL -g -np 4 -m 24000 -dir "results/singlepole_yoke" -j "singlepole_yoke"
+!   2. In ANSYS command input:
+!      /INPUT,'post_view_Bfield','txt','C:\Users\pmero\Documents\Lab406\KevinFan-singlepole\MT_simulation'
+!
+! Change CASE_NAME to switch between Case A and Case B
+! ================================================================
+
+! ---- USER SETTINGS ----
+CASE_NAME = 'singlepole_yoke'    ! 'singlepole_only' or 'singlepole_yoke'
+
+! Slice thickness (meters)
+DZ_SLICE = 0.5e-3               ! +/- 0.5mm for XY plane slicing
+DY_SLICE = 2e-3                  ! +/- 2mm for XZ plane slicing
+
+! ---- GEOMETRY PARAMETERS ----
+*afun, DEG
+R_norm    = 500e-6
+R_norm_xy = R_norm*sqrt(2.0/3.0)
+R_norm_z  = R_norm/sqrt(3.0)
+PROT_H    = 7.0e-3
+YOKE_H    = 2.0e-3
+SPH_OFST  = -PROT_H - 6.0e-3 + R_norm_z    ! WP center z ≈ -12.711mm
+
+
+! ========================================
+! Step 1: Load and configure display
+! ========================================
+RESUME,CASE_NAME,'db'
+/POST1
+SET,LAST
+ALLSEL,ALL
+
+! ---- Display quality settings ----
+! White background
+/RGB,INDEX,100,100,100, 0
+/RGB,INDEX, 80, 80, 80,13
+/RGB,INDEX, 60, 60, 60,14
+/RGB,INDEX, 0, 0, 0,15
+
+! High-res PNG output
+/GFILE,1600
+/SHOW,PNG,,0
+/DEVICE,VECTOR,0         ! raster mode for cleaner PNGs
+
+! Contour settings: smooth gradient with enough levels
+/CONTOUR,,20             ! 20 contour levels for smooth color
+/EDGE,1,0                ! no element edge lines (cleaner look)
+/NUMBER,0                ! no numbering
+
+
+! ========================================
+! View 1: |B| contour — XY plane at WP center (full scale)
+! Like fig2_3a: shows full model extent
+! ========================================
+/TITLE, |B| contour — XY plane at WP center (full scale)
+ALLSEL,ALL
+NSEL,S,LOC,Z, SPH_OFST - DZ_SLICE, SPH_OFST + DZ_SLICE
+
+/VIEW,1,0,0,1            ! top view (look down +z)
+/ANG,1,0
+/AUTO,1
+PLNSOL,B,SUM             ! |B| filled contour
+
+/IMAGE,SAVE,'view1_Bcontour_XY_full',png
+
+
+! ========================================
+! View 2: B vectors — XY plane at WP center (full scale)
+! Like fig2_3a: arrows showing flux direction
+! ========================================
+/TITLE, B vectors — XY plane at WP center (full scale)
+ALLSEL,ALL
+NSEL,S,LOC,Z, SPH_OFST - DZ_SLICE, SPH_OFST + DZ_SLICE
+
+! Thin out nodes for readable arrows:
+! Select every Nth node by using NSEL with coordinate steps
+! (ANSYS will auto-scale but we help with /VSCALE)
+/VSCALE,1,2.0,1          ! vector scale: window 1, factor 2x, key=1 (uniform)
+
+/VIEW,1,0,0,1
+/ANG,1,0
+/AUTO,1
+PLVECT,B,,,,VECT
+
+/IMAGE,SAVE,'view2_Bvect_XY_full',png
+
+
+! ========================================
+! View 3: |B| contour — XY plane zoomed at WP (±2mm)
+! Like fig2_4a: WP region detail
+! ========================================
+/TITLE, |B| contour — XY plane at WP (zoomed +/-2mm)
+ALLSEL,ALL
+NSEL,S,LOC,Z, SPH_OFST - DZ_SLICE, SPH_OFST + DZ_SLICE
+! Restrict to WP region
+NSEL,R,LOC,X, -2e-3, 2e-3
+NSEL,R,LOC,Y, -2e-3, 2e-3
+
+/VIEW,1,0,0,1
+/ANG,1,0
+/AUTO,1
+PLNSOL,B,SUM
+
+/IMAGE,SAVE,'view3_Bcontour_XY_WPzoom',png
+
+
+! ========================================
+! View 4: B vectors — XY plane zoomed at WP (±2mm)
+! ========================================
+/TITLE, B vectors — XY plane at WP (zoomed +/-2mm)
+! Same selection as View 3 (still active)
+
+/VSCALE,1,5.0,1          ! larger arrows for zoomed view
+
+/VIEW,1,0,0,1
+/ANG,1,0
+/AUTO,1
+PLVECT,B,,,,VECT
+
+/IMAGE,SAVE,'view4_Bvect_XY_WPzoom',png
+
+
+! ========================================
+! View 5: |B| contour — XZ side view (y=0)
+! Shows pole → protrusion → yoke flux path
+! ========================================
+/TITLE, |B| contour — XZ plane at y=0 (magnetic circuit)
+ALLSEL,ALL
+NSEL,S,LOC,Y, -DY_SLICE, DY_SLICE
+
+/VIEW,1,0,-1,0           ! side view (look along -y)
+/ANG,1,0
+/AUTO,1
+PLNSOL,B,SUM
+
+/IMAGE,SAVE,'view5_Bcontour_XZ_side',png
+
+
+! ========================================
+! View 6: B vectors — XZ side view (y=0)
+! ========================================
+/TITLE, B vectors — XZ plane at y=0 (magnetic circuit)
+ALLSEL,ALL
+NSEL,S,LOC,Y, -DY_SLICE, DY_SLICE
+
+/VSCALE,1,2.0,1
+
+/VIEW,1,0,-1,0
+/ANG,1,0
+/AUTO,1
+PLVECT,B,,,,VECT
+
+/IMAGE,SAVE,'view6_Bvect_XZ_side',png
+
+
+! ========================================
+! View 7: Iron only — |B| contour + vectors
+! Shows flux path inside pole cone + protrusion + yoke
+! ========================================
+/TITLE, Iron core — |B| contour (MAT=2)
+ALLSEL,ALL
+ESEL,S,MAT,,2            ! iron elements only
+NSLE,S
+
+/VIEW,1,0,-1,0           ! side view
+/ANG,1,0
+/AUTO,1
+PLNSOL,B,SUM
+
+/IMAGE,SAVE,'view7_Bcontour_iron_side',png
+
+! Iron vectors
+/TITLE, Iron core — B vectors (MAT=2)
+/VSCALE,1,3.0,1
+PLVECT,B,,,,VECT
+
+/IMAGE,SAVE,'view8_Bvect_iron_side',png
+
+! Iron 3D view
+/TITLE, Iron core — |B| contour (3D view)
+/VIEW,1,1,-1,1            ! isometric
+/ANG,1,0
+/AUTO,1
+PLNSOL,B,SUM
+
+/IMAGE,SAVE,'view9_Bcontour_iron_3D',png
+
+
+! ========================================
+! Cleanup
+! ========================================
+/SHOW,CLOSE              ! close PNG device
+/SHOW,WIN32              ! switch back to screen display
+ALLSEL,ALL
+/TITLE, Visualization complete — PNGs saved
+
+! Re-display last view on screen
+PLNSOL,B,SUM
