@@ -47,6 +47,19 @@ magnetic-tweezers-sim/                   Git root
 └── (future: hexapole-<name>/)           Additional hexapole designs
 ```
 
+## Hexapole Design Constraints (Mandatory)
+
+These constraints apply to ALL hexapole designs in this repo. They are non-negotiable.
+
+1. **Orthogonal pair axes**: 3 opposing pole pairs (P1-P2, P3-P4, P5-P6) must have mutually perpendicular connecting lines
+2. **Tips on common sphere**: All 6 pole tips at distance R_norm from WP center (R_norm is adjustable)
+3. **60-degree azimuthal offset**: Upper layer rotated 60 deg relative to Lower layer
+4. **alpha = arctan(sqrt(2)) = 54.74 deg is FIXED**: derived from constraints 1-3, not a free parameter
+   - `R_norm_xy = R_norm * sqrt(2/3)` and `R_norm_z = R_norm / sqrt(3)` — these formulas are locked
+   - Lower poles at 0, 120, 240 deg; Upper poles at 60, 180, 300 deg
+
+Full derivation and modeling reference: `docs/hexapole-simulation-reference.md`
+
 ## Rules
 - 6 Coil scripts are synchronized: only `CURR_ARRAY` values differ (one coil = 1, rest = 0)
 - All code comments in English; explanations to user in Traditional Chinese
@@ -70,6 +83,8 @@ magnetic-tweezers-sim/                   Git root
 - NEVER change geometry parameters without explicit user approval
 - NEVER modify element types or material properties without approval
 - NEVER remove boundary condition section (`[ADDED]` block near line 500)
+- NEVER change alpha (54.74 deg) or the R_norm_xy / R_norm_z formulas
+- NEVER produce a pole configuration that violates pair-axis orthogonality
 
 ## Notation Standard
 All symbols and terms follow Fei Long's 2016 dissertation. See the full glossary:
@@ -93,6 +108,7 @@ Key conventions:
 - `hexapole-long2016/docs/simulation-parameters.md` - geometry, materials, mesh, solver
 - `hexapole-long2016/docs/workflow.md` - 4-stage simulation-to-publication pipeline
 - `hexapole-long2016/docs/troubleshooting.md` - known errors and fixes
+- `docs/hexapole-simulation-reference.md` - **mandatory constraints + modeling procedure for all hexapole designs**
 - `references/README.md` - paper index, notes-first reading strategy
 
 ## Compact Instructions
@@ -103,3 +119,4 @@ When context is compressed, preserve:
 4. User prefers Traditional Chinese explanations
 5. Use paper pole names P1-P6 (not APDL indices) in all discussion
 6. Notation follows Long 2016 dissertation — see `hexapole-long2016/docs/notation-glossary.md`
+7. alpha = 54.74 deg is FIXED for all hexapole designs — see `docs/hexapole-simulation-reference.md`
