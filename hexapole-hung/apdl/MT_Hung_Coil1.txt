@@ -8,7 +8,7 @@
 ! Simplifications vs Hung CAD:
 !   - Protrusions: cylindrical (CYL4), not blocks
 !   - Guide_Post: merged into protrusion
-!   - Tip: near-sharp (R=5um fillet, effectively zero)
+!   - Tip: sharp cone (no fillet, straight line to tip)
 !
 ! Changes from Long 2016 marked with [HUNG]
 ! ================================================================
@@ -64,19 +64,9 @@ PROT_H     = 17.0e-3       ! [HUNG] 17 mm (was 7 mm, matches coil height)
 
 ! ---- Pole dimensions [HUNG] ----
 POLE_R        = 6.35e-3/2       ! [HUNG] 3.175 mm (was 3 mm)
-POLE_TIP_R    = 5.0e-6          ! [HUNG] 5 um near-sharp (was 40 um fillet)
 POLE_CONE_LEN = 16e-3           ! [HUNG] 16 mm (was 15 mm, from R/tan(11.3 deg))
-
-! ---- Derived pole tip geometry (same formulas as Long 2016) ----
-POLE_CONE_HYP = sqrt(POLE_CONE_LEN**2 + POLE_R**2)
-ANG1 = acos(POLE_R/POLE_CONE_HYP)
-ANG2 = 90 - ANG1
-L = POLE_CONE_LEN*POLE_TIP_R/POLE_R
-POLE_TIP_CENTER = L/cos(ANG2)
-POLE_CONE2_LEN  = L*cos(ANG2)
-POLE_TIP_R2     = POLE_TIP_R*cos(ANG2)
-POLE_TIP_FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R
-POLE_TIP_FILLET_PROT = (POLE_CONE2_LEN - POLE_TIP_FILLET_DROP)
+! [HUNG] No tip fillet — sharp cone tip (Long 2016 had POLE_TIP_R = 40 um)
+! Fillet-related variables removed: POLE_TIP_R, POLE_TIP_CENTER, etc.
 
 ! ---- WP center Z offset ----
 MT_CTR_ZOFST = -PROT_H - 6.0e-3 + R_norm_z
@@ -141,7 +131,9 @@ Z0_LOW = -PROT_H
 	BLOCK, X0_LOW - 10e-3, X0_LOW - 2e-3,  Y0_LOW - 5e-3,  Y0_LOW + 5e-3,  Z0_LOW - 10e-3, Z0_LOW - 2e-3
 	BLOCK, X0_LOW - 10e-3, X0_LOW - 5e-3,  Y0_LOW - 10e-3, Y0_LOW + 10e-3, Z0_LOW - 10e-3, Z0_LOW - 5e-3
 
-	! **** Key points & line: ****
+	! **** Key points & line [HUNG] sharp tip, no fillet: ****
+	! Profile: KP1(tip) -> KP2(cone base) -> KP3(holder edge) -> KP4(holder center)
+	! 4 keypoints, 4 straight lines, no LARC
 	*get, KP_NUM, KP  , ,NUM, MAX
 	*get, LI_NUM, LINE, ,NUM, MAX
 	KP_START = KP_NUM + 1
@@ -149,47 +141,42 @@ Z0_LOW = -PROT_H
 	numstr, KP,   KP_START
 	numstr, LINE, LI_START
 
+	! KP1: tip point (on axis of revolution)
 	l1 = R_norm_xy
-        l1_ang = atan2( 0 , R_norm_xy )
+	l1_ang = atan2( 0 , R_norm_xy )
 
-        l2 = sqrt( (R_norm_xy + POLE_TIP_FILLET_PROT)**2 + POLE_TIP_R2**2 )
-	l2_ang = atan2( POLE_TIP_R2 , (R_norm_xy + POLE_TIP_FILLET_PROT) )
+	! KP2: cone base edge (POLE_R offset, at POLE_CONE_LEN from tip)
+	POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + R_norm_xy
+	l2 = sqrt( POLE_CONE_LEN_SHIFT**2 + POLE_R**2 )
+	l2_ang = atan2( POLE_R , POLE_CONE_LEN )
 
-	POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + (R_norm_xy - POLE_TIP_FILLET_DROP)
-	l3 = sqrt( POLE_CONE_LEN_SHIFT**2 + POLE_R**2 )
-	l3_ang = atan2( POLE_R , POLE_CONE_LEN )
+	! KP3: holder edge (same POLE_R offset)
+	l3 = sqrt( (X0_LOW - 10e-3)**2 + POLE_R**2 )
+	l3_ang = atan2( POLE_R , (X0_LOW - 10e-3) )
 
-	l4 = sqrt( (X0_LOW - 10e-3)**2 + POLE_R**2 )
-	l4_ang = atan2( POLE_R , (X0_LOW - 10e-3) )
-
-	l5 = abs( X0_LOW - 10e-3 )
-	l5_ang = atan2( 0 , (X0_LOW - 10e-3) )
-
-	l6 = abs( R_norm_xy + POLE_TIP_R )
-	l6_ang = atan2( 0, R_norm_xy + POLE_TIP_R )
+	! KP4: holder center (on axis of revolution)
+	l4 = abs( X0_LOW - 10e-3 )
+	l4_ang = atan2( 0 , (X0_LOW - 10e-3) )
 
 	K , , l1*cos(ROTA_ANG + l1_ang) , l1*sin(ROTA_ANG + l1_ang), Z0_LOW - 6e-3
 	K , , l2*cos(ROTA_ANG + l2_ang) , l2*sin(ROTA_ANG + l2_ang), Z0_LOW - 6e-3
 	K , , l3*cos(ROTA_ANG + l3_ang) , l3*sin(ROTA_ANG + l3_ang), Z0_LOW - 6e-3
 	K , , l4*cos(ROTA_ANG + l4_ang) , l4*sin(ROTA_ANG + l4_ang), Z0_LOW - 6e-3
-	K , , l5*cos(ROTA_ANG + l5_ang) , l5*sin(ROTA_ANG + l5_ang), Z0_LOW - 6e-3
-	K , , l6*cos(ROTA_ANG + l6_ang) , l6*sin(ROTA_ANG + l6_ang), Z0_LOW - 6e-3
 
-	LARC , KP_START , KP_START + 1 , KP_START + 5 , POLE_TIP_R
+	L , KP_START , KP_START + 1,,,,,,,,
 	L , KP_START + 1 , KP_START + 2,,,,,,,,
 	L , KP_START + 2 , KP_START + 3,,,,,,,,
-	L , KP_START + 3 , KP_START + 4,,,,,,,,
-	L , KP_START + 4 , KP_START,,,,,,,,
+	L , KP_START + 3 , KP_START,,,,,,,,
 
 	! **** Create Area: ****
 	*get, AR_NUM, AREA, ,NUM, MAX
 	AR_START = AR_NUM + 1
 	numstr, AREA, AR_START
 
-	AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3, LI_START + 4
+	AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3
 
 	! **** Rotate area to get volume: ****
-	VROTAT, AR_START, ,,,,,KP_START,KP_START + 4,,4
+	VROTAT, AR_START, ,,,,,KP_START,KP_START + 3,,4
 
 	! **** Unite the volume: ****
 	*get, vl_ind_temp, VOLU,,NUM,MAX
@@ -251,7 +238,8 @@ Z0_LOW = -PROT_H
 
 	INCLINE_ANG = atan2( INCLINE_VECTORz, sqrt(INCLINE_VECTORx**2+INCLINE_VECTORy**2) )
 
-	! **** Key points & line: ****
+	! **** Key points & line [HUNG] sharp tip, no fillet: ****
+	! Profile: KP1(tip) -> KP2(cone base) -> KP3(holder edge) -> KP4(holder center)
 	*get, KP_NUM, KP  , ,NUM, MAX
 	*get, LI_NUM, LINE, ,NUM, MAX
 	KP_START = KP_NUM + 1
@@ -259,53 +247,46 @@ Z0_LOW = -PROT_H
 	numstr, KP,   KP_START
 	numstr, LINE, LI_START
 
+	! KP1: tip point
         p1x = tip_upper_x
 	p1y = tip_upper_y
 	p1z = tip_upper_z
 
-        p2x = p1x + POLE_TIP_FILLET_PROT*cos(INCLINE_ANG)*cos(ROTA_ANG) - POLE_TIP_R2*sin(ROTA_ANG)
-	p2y = p1y + POLE_TIP_FILLET_PROT*cos(INCLINE_ANG)*sin(ROTA_ANG) + POLE_TIP_R2*cos(ROTA_ANG)
-        p2z = p1z + POLE_TIP_FILLET_PROT*sin(INCLINE_ANG)
+	! KP2: cone base edge (POLE_R offset from axis, at POLE_CONE_LEN from tip)
+	POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + R_norm_xy
+	p2x = p1x + POLE_CONE_LEN_SHIFT*cos(INCLINE_ANG)*cos(ROTA_ANG) - POLE_R*sin(ROTA_ANG)
+	p2y = p1y + POLE_CONE_LEN_SHIFT*cos(INCLINE_ANG)*sin(ROTA_ANG) + POLE_R*cos(ROTA_ANG)
+	p2z = p1z + POLE_CONE_LEN_SHIFT*sin(INCLINE_ANG)
 
-	POLE_CONE_LEN_SHIFT = POLE_CONE_LEN + (R_norm_xy - POLE_TIP_FILLET_DROP)
-	p3x = p1x + POLE_CONE_LEN_SHIFT*cos(INCLINE_ANG)*cos(ROTA_ANG) - POLE_R*sin(ROTA_ANG)
-	p3y = p1y + POLE_CONE_LEN_SHIFT*cos(INCLINE_ANG)*sin(ROTA_ANG) + POLE_R*cos(ROTA_ANG)
-	p3z = p1z + POLE_CONE_LEN_SHIFT*sin(INCLINE_ANG)
+	! KP3: holder edge
+	p3x = end_upper_x - POLE_R*sin(ROTA_ANG)
+	p3y = end_upper_y + POLE_R*cos(ROTA_ANG)
+	p3z = end_upper_z
 
-	p4x = end_upper_x - POLE_R*sin(ROTA_ANG)
-	p4y = end_upper_y + POLE_R*cos(ROTA_ANG)
+	! KP4: holder center (on axis of revolution)
+	p4x = end_upper_x
+	p4y = end_upper_y
 	p4z = end_upper_z
-
-	p5x = end_upper_x
-	p5y = end_upper_y
-	p5z = end_upper_z
-
-        p6x = p1x + POLE_CONE_LEN*cos(INCLINE_ANG)*cos(ROTA_ANG)
-	p6y = p1y + POLE_CONE_LEN*cos(INCLINE_ANG)*sin(ROTA_ANG)
-        p6z = p1z + POLE_CONE_LEN*sin(INCLINE_ANG)
 
 	K,, p1x , p1y , p1z
 	K,, p2x , p2y , p2z
 	K,, p3x , p3y , p3z
 	K,, p4x , p4y , p4z
-	K,, p5x , p5y , p5z
-	K,, p6x , p6y , p6z
 
-        LARC , KP_START , KP_START + 1 , KP_START + 5 , POLE_TIP_R
+	L , KP_START , KP_START + 1,,,,,,,,
 	L , KP_START + 1 , KP_START + 2,,,,,,,,
 	L , KP_START + 2 , KP_START + 3,,,,,,,,
-	L , KP_START + 3 , KP_START + 4,,,,,,,,
-	L , KP_START + 4 , KP_START,,,,,,,,
+	L , KP_START + 3 , KP_START,,,,,,,,
 
 	! **** Create Area: ****
 	*get, AR_NUM, AREA, ,NUM, MAX
 	AR_START = AR_NUM + 1
 	numstr, AREA, AR_START
 
-	AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3, LI_START + 4
+	AL, LI_START, LI_START + 1, LI_START + 2, LI_START + 3
 
 	! **** Rotate area to get volume: ****
-	VROTAT, AR_START, ,,,,,KP_START,KP_START + 4,,4
+	VROTAT, AR_START, ,,,,,KP_START,KP_START + 3,,4
 
 	! **** Unite the volume: ****
 	*get, vl_ind_temp, VOLU,,NUM,MAX
