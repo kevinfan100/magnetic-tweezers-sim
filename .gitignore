@@ -23,6 +23,9 @@
 # Results directories
 **/results/
 
+# COMSOL files (large binary, not tracked)
+hung/comsol/
+
 # MATLAB temp files
 *.asv
 *.m~

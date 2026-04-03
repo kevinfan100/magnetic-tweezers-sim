@@ -1,5 +1,9 @@
 # Magnetic Tweezers Simulation Project
 
+## Quick Triggers
+- 當使用者說「**建 hexapole**」時，參照 `.claude/rules/hexapole-build.md` 執行建模流程
+- 當工作涉及 `hung/` 目錄時，參照 `.claude/rules/hung-docs.md` 讀取必要文件
+
 ## Commands
 ```bash
 # Run single coil (batch mode, no GUI) — run from hexapole-long2016/
