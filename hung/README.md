@@ -12,9 +12,10 @@ hung/
 ├── analysis/    MATLAB scripts: data import, figure generation
 ├── comsol/      COMSOL Multiphysics models (alternative FEM, independent from APDL)
 ├── docs/        Technical documentation: workflow, geometry, troubleshooting
-├── figures/     Output figures organized by coil (coil1~6) + geometry
-├── IGES/        IGES exports of individual parts + full assembly (SolidWorks compatible)
-├── results/     ANSYS simulation outputs: coil1~6 (gitignored, ~10GB each)
+├── figures/          Output figures organized by coil (coil1~6) + geometry
+├── IGES/             IGES exports: raw ANSYS output (unit flag=6)
+├── IGES_converted/   IGES exports: unit flag fixed (flag=1), safe for STEP conversion
+├── results/          ANSYS simulation outputs: coil1~6 (gitignored, ~10GB each)
 └── README.md    This file
 ```
 
