@@ -4,7 +4,9 @@
 | File | Description |
 |------|-------------|
 | `MT_Hung_SphereModel.txt` | Build full hexapole geometry and export as IGES (MM=1/25.4, SolidWorks compatible) |
+| `MT_Hung_SphereModel_filleted.txt` | Same as above, but with 40 um diameter spherical fillet on all 6 pole tips. Method A: smooth tangent fillet, cone semi-angle preserved (11.31°), junction shifted from 15.875 -> 15.793 mm. Output: `Full_Assembly_filleted.iges` |
 | `export_parts.txt` | Export individual parts as separate IGES files to `hung/IGES/`. Dimensions are hardcoded — update values when part sizes change, then re-run |
+| `export_pole_filleted.txt` | Export single pole with 40 um diameter tip fillet. Output: `Mag_Pole_Bottom_filleted.iges` |
 
 ## Simulation (6 Coils)
 | File | Active Coil | CURR_ARRAY |

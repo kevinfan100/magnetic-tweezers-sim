@@ -138,6 +138,42 @@ sed -i "s/,1.0,6,,/,1.0,1,,/" file.iges
 
 ---
 
+## Pole tip fillet：方案 A vs 方案 B
+
+**問題：** 為 pole tip 加 40 µm 直徑 fillet 時，幾何上不可能同時滿足三個條件：
+1. Fillet 在原 tip 位置
+2. Cone 半角維持 11.31°（原始 STEP 量值）
+3. Cone-cyl 接點維持在 X=15.875 mm
+
+必須有一個讓步。
+
+**方案 A（已採用）：smooth tangent fillet**
+- Cone 半角不變（11.31°）
+- Junction X 從 15.875 → 15.793 mm（內縮 0.082 mm）
+- Fillet 與 cone 平滑相切（無銳角）
+- Cylinder 段補回 0.082 mm，總長 43 mm 不變
+- **這是 Long2016 的做法，幾何上正確**
+
+**方案 B（不採用）：sharp corner**
+- Cone 半角變成 12.96°（變陡）
+- Junction X = 13.74 mm
+- Cone 從 fillet foremost (0,0) 直接出發，與 fillet 形成銳角
+- 改變了 pole 的物理形狀
+
+**Long2016 公式（複用）：**
+```
+POLE_TIP_R = 20e-6                     ! 半徑（40 µm 直徑）
+ANG2 = atan(POLE_R/POLE_CONE_LEN)      ! 11.31°
+L_FILLET = POLE_CONE_LEN*POLE_TIP_R/POLE_R
+POLE_TIP_CENTER = L_FILLET/cos(ANG2)
+FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R = 0.082 mm
+JUNC_X = POLE_CONE_LEN - FILLET_DROP = 15.793 mm
+```
+
+**實作：** `apdl/MT_Hung_SphereModel_filleted.txt`、`apdl/export_pole_filleted.txt`
+
+---
+
 ## Post-processing 從獨立 session 執行時找不到結果檔
 
 **問題：** 用獨立 ANSYS session 跑 post_extract_wp.txt 時報 "No results file"。

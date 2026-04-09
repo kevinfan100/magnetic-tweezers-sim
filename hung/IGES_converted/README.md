@@ -19,6 +19,8 @@ This ensures reliable conversion when saving as STEP in SolidWorks or other CAD 
 | `Coil.iges` | Excitation coil (R_in=10, R_out=12, H=15mm) |
 | `Upper_Ring.iges` | Yoke ring (R_in=38, R_out=62.5, T=2mm) |
 | `Full_Assembly.iges` | Complete hexapole assembly |
+| `Mag_Pole_Bottom_filleted.iges` | Pole with 40 um diameter tip fillet (single part) |
+| `Full_Assembly_filleted.iges` | Complete assembly with 40 um tip fillet on all 6 poles |
 
 ## Units
 All files: values in inches, unit flag = 1 (inches).
