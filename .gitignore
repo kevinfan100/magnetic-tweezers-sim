@@ -31,7 +31,7 @@ hung/comsol/
 *.m~
 
 # Reference PDFs (large binary files)
-references/pdfs/*.pdf
+references/pdfs/**/*.pdf
 
 # Reference text extracts (regenerable from PDFs via pdftotext)
 references/texts/
