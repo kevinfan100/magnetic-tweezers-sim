@@ -4,57 +4,103 @@
 
 ```
 figures/
-├── coil1/ ~ coil6/    Each coil excitation results (70 A-turns, one coil active)
-├── geometry/           Model geometry visualization (not coil-specific)
-└── README.md           This file
+├── coil1/ ~ coil6/    B-field distribution plots per single-coil excitation
+│   └── fail/          Rejected or superseded versions of those plots
+├── analytic/          Analysis figures: fitting, geometry, sensor sensitivity
+└── README.md          This file
 ```
 
-## Coil Folders (coil1 ~ coil6)
+**Convention** (per project figure-organization rule):
+- Successful distribution plots go in the `coilN/` root and **overwrite the previous file with the same name**.
+- Rejected / superseded versions move to `coilN/fail/`.
+- Analysis, parameter-sweep, geometry-annotation, and sensor-study figures live in `analytic/` (not coil-specific).
 
-Each folder contains the same set of figures for a single-coil excitation:
+Currently only **coil1/** has populated B-field plots; coil2–6 have empty `fail/` subfolders reserved.
 
-| File | Description | Axes | Range |
-|------|-------------|------|-------|
-| `Bvector_topview.png` | Top-view B-field vector plot | XY, ±80 mm | 0–1 Tesla |
-| `Bfield_xy.png` | \|B\| contour on XY plane (z=0) | XY, ±300 um | mT |
-| `Bfield_xz.png` | \|B\| contour on XZ plane (y=0) | XZ, ±300 um | mT |
-| `Bfield_3d.png` | 3D B-field arrows in iron only | XYZ, full model | Tesla |
-
-Currently only **coil1** has results. Coil2–6 are pending simulation.
-
-## Geometry Folder
+## coil1/ — B-field plots (D-shape + 40 µm fillet, 70 A-turns)
 
 | File | Description |
 |------|-------------|
-| `sphere_3D.png` | 3D view of 6 pole tips on R=0.5mm sphere, with P1–P6 labels |
-| `topview.png` | Top view showing azimuth angles, pole pairing, measured coordinate system |
+| `Bvector_topview.png` | Top-view B-field vectors over the full model (±80 mm, Tesla) |
+| `Bvector_topview_mT.png` | Same top view, rescaled to mT (close-up near working point) |
+| `Bvector_3D_iron.png` | 3D B-field arrows inside iron only, showing flux circulation |
+| `Bfield_xy.png` | \|B\| contour on XY plane (z=0), ±300 µm around WP |
+| `Bfield_xy_filleted_sym.png` | Same slice, symmetrized about pole axes (D-shape + fillet) |
+| `Bfield_xy_round_filleted.png` | Same slice, run with the full-round + fillet pole variant (comparison) |
+| `Bcontour_P1_topview.png` | \|B\| contour at P1 tip top view |
+| `Bcontour_xa_za_actuation.png` | Actuation B-field contour on the x_a – z_a plane |
+
+## analytic/ — Fitting & analysis figures
+
+### Point-charge model fitting
+| File | Description |
+|------|-------------|
+| `charge_model_cost_landscape.png` | Method [A] cost vs ell (1D search landscape) |
+| `charge_positions_J.png` | 6 fitted charge positions from Method [J] ideal K_I |
+| `charge_projection_lower_upper.png` | Lower/Upper charge projection schematic (s, θ, l relationship) |
+| `fitting_J_idealKI_quiver_error.png` | [J] ideal K_I: FEM vs model quiver + % error scatter |
+| `fitting_J_idealKI_RMSE.png` | [J] ideal K_I: FEM vs model quiver + RMSE (mT) |
+| `fitting_J_idealKI_50um_RMSE.png` | [J] ±50 µm cube (Long-compatible) + RMSE |
+| `fitting_B6x_quiver_error.png` | [B-6x] alternating superposition: FEM vs model quiver + error |
+
+### Direction vectors (d̂)
+| File | Description |
+|------|-------------|
+| `dhat_vs_pole_axis.png` | d̂ (WP→charge) vs pole axis direction, Hung |
+| `dhat_vs_pole_axis_Long.png` | Same comparison for Long 2016 (reference) |
+| `dhat_3D_Long.png` | 3D view of Long 2016 d̂ vectors |
+
+### Hall-sensor analysis
+| File | Description |
+|------|-------------|
+| `sensor_sensitivity_full.png` | Sensor sensitivity vs position, full range with installable annotation |
+| `sensor_sensitivity_vs_position.png` | Same, zoomed to installable range |
+| `sensor_ratio_fit.png` | Sensitivity ratio fit curve |
+| `sensor_ratio_vs_distance.png` | Sensitivity ratio vs sensor-to-WP distance |
+| `sensor_Btop_full_range.png` | B-field magnitude at sensor top surface, full range |
+| `sensor_Btop_vs_position.png` | Same, zoomed |
+
+### Geometry annotations
+| File | Description |
+|------|-------------|
+| `hexapole_tip_annotated.png` | 6 pole tips on R=0.5 mm sphere with P1–P6 labels and l annotation |
+| `mesh_steel_filleted_3D.png` | 3D mesh visualization of steel body (D-shape + fillet, no yoke) |
 
 ## Generating Figures
 
+Paths reflect the current post-reorg structure:
+
 ```bash
-# Step 1: Run ANSYS simulation (if not already done)
+# Step 1: Run ANSYS simulation (D-shape + fillet, coil1)
 cd hung/
 "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 8000 \
-  -dir "results/coil1" -j "coil1" \
-  -i "apdl/variants/MT_Hung_Simulate_Coil1.txt" -o "results/coil1/solve.out"
+  -dir "results/coil1/filleted" -j "coil1" \
+  -i "apdl/sim/MT_Hung_Simulate_Coil1_filleted.txt" \
+  -o "results/coil1/filleted/solve.out"
 
-# Step 2: Export B-field data
-"C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 1 -m 8000 \
-  -dir "results/coil1" -j "coil1" \
-  -i "apdl/postproc/post_export_data.txt" -o "results/coil1/export_data.out"
+# Step 2: Export B-field data for MATLAB
+"C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 1 -m 4000 \
+  -dir "results/coil1/filleted" -j "coil1" \
+  -i "apdl/postproc/post_export_data.txt"
 
-# Step 3: Run MATLAB scripts
-matlab -r "run('analysis/generate_figures.m')"
-matlab -r "run('analysis/generate_fig_3d.m')"
+# Step 3: Generate plots in MATLAB
+cd analysis/plot
+# In MATLAB:
+#   run('plot_Bfield_2d.m')      -> figures/ root (move to figures/coil1/)
+#   run('plot_Bfield_3d.m')      -> Bvector_3D_iron.png
+#   run('plot_J_quiver.m')       -> figures/analytic/fitting_J_idealKI_quiver_error.png
+#   run('plot_J_rmse.m')         -> figures/analytic/fitting_J_idealKI_RMSE.png
+#   run('plot_charge_proj.m')    -> figures/analytic/charge_projection_lower_upper.png
 ```
 
-Note: MATLAB scripts save to `figures/` root. Manually move to `coil1/` and rename.
+Note: `plot_Bfield_2d.m` and `plot_Bfield_3d.m` save to the `figures/` root — manually move the output into the appropriate `coilN/` subfolder after each run.
 
 ## Simulation Parameters
 
 | Parameter | Value |
 |-----------|-------|
-| Excitation | 70 A-turns (TURNS=70, I=1A) |
+| Excitation | 70 A-turns (TURNS=70, I=1 A) |
 | Steel mu_r | 280 (linear, constant) |
-| Mesh | 0.3mm tips, 1.5mm steel, 4mm air |
+| Pole shape | D-shape + 40 µm diameter tip fillet |
+| Mesh | tips fine → steel ~ coarse air |
 | Solver | magsolv,3 (DSP) |
