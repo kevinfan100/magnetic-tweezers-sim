@@ -285,7 +285,7 @@ Angle B-C: 90.0000° ✓
 
 ### ANSYS 驗證（已完成）
 
-模型建構：`hung/apdl/MT_Hung_SphereModel.txt` → `Hung_SphereModel.iges`
+模型建構：`hung/apdl/variants/MT_Hung_SphereModel.txt` → `Hung_SphereModel.iges`
 SolidWorks 量測確認：
 
 ```

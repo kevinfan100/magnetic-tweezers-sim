@@ -150,7 +150,7 @@ Tip-to-tip: 1.000 mm ✓
 
 ### APDL 模型
 
-腳本：`hung/apdl/MT_Hung_SphereModel.txt`
+腳本：`hung/apdl/variants/MT_Hung_SphereModel.txt`
 圖檔：`hung/figures/hexapole_sphere_6poles.png`
 
 ---

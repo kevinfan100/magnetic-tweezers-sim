@@ -1,10 +1,10 @@
 ! =======================================
-! MT_Hung_Simulate_Coil1_filleted.txt
+! MT_Hung_Simulate_Coil3_filleted.txt
 ! [MODIFIED] D-shape + 80 µm 直徑 tip fillet (R=40um, 與龍飛一致)
 ! BTOL=1e-6, VGLUE 恢復
 ! =======================================
 
-/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hung\results\coil1\filleted'
+/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hung\results\coil3\filleted'
 
 /PREP7
 *afun, DEG
@@ -693,6 +693,41 @@ ESIZE, 0.3e-3               ! 0.3mm
 vmesh, ALL
 ALLSEL, ALL
 
+! [ADDED] Multi-pass NREFINE near WP center for fitting data density
+! Pass 1: R < 1mm (coarse refinement of broad region)
+VSEL, S, VOLU, , 7
+ESLV, S
+LOCAL, 99, 2, 0, 0, 0       ! spherical CS at origin
+CSYS, 99
+NSEL, R, LOC, X, 0, 1.0e-3  ! nodes within R < 1mm
+CSYS, 0
+ESLN, S, 0
+NSLE, S
+NREFINE, ALL, , , 2, 1, 1   ! [ADDED] level 2
+ALLSEL, ALL
+
+! Pass 2: R < 0.3mm (focus on fitting region)
+VSEL, S, VOLU, , 7
+ESLV, S
+CSYS, 99
+NSEL, R, LOC, X, 0, 0.3e-3  ! nodes within R < 300um
+CSYS, 0
+ESLN, S, 0
+NSLE, S
+NREFINE, ALL, , , 2, 1, 1   ! [ADDED] level 2
+ALLSEL, ALL
+
+! Pass 3: R < 0.1mm (dense core for +-50um cube)
+VSEL, S, VOLU, , 7
+ESLV, S
+CSYS, 99
+NSEL, R, LOC, X, 0, 0.1e-3  ! nodes within R < 100um
+CSYS, 0
+ESLN, S, 0
+NSLE, S
+NREFINE, ALL, , , 2, 1, 1   ! [ADDED] level 2
+ALLSEL, ALL
+
 ! 2. 鋼主體 (V8): 中等
 VSEL, S, VOLU, , 8
 ESIZE, 1.5e-3               ! 1.5mm
@@ -735,9 +770,9 @@ COIL_DY = 2.0*MM                 ! R_out - R_in = 12 - 10 = 2mm
 COIL_DZ = 15.0*MM                ! 高度 15mm
 
 *dim, CURR_ARRAY, , 6
-CURR_ARRAY(1) = 1
+CURR_ARRAY(1) = 0
 CURR_ARRAY(2) = 0
-CURR_ARRAY(3) = 0
+CURR_ARRAY(3) = 1
 CURR_ARRAY(4) = 0
 CURR_ARRAY(5) = 0
 CURR_ARRAY(6) = 0

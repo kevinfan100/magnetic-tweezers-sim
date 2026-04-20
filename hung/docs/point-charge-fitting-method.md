@@ -1,4 +1,4 @@
-# Point-Charge Model Fitting 方法說明
+ # Point-Charge Model Fitting 方法說明
 
 > 來源：Fei Long (龍飛) 2016 Dissertation, Section 2.2.3
 > 整理目的：給人看的流程文件，方便套用到 Hung hexapole

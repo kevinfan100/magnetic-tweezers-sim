@@ -15,6 +15,12 @@
 - COIL_H（14mm, yoke 間距）和 COIL_DZ（15mm, SOURC36 截面高度）是**不同的參數**
 - 9 Volumes：V1-6=tips, V7=sphere air, V8=steel body, V9=cylinder air
 - IGES 匯出用 `MM = 1/25.4`（SolidWorks 相容），模擬用 `MM = 1e-3`（MKS）
-- 零件尺寸變更時，更新 `hung/apdl/export_parts.txt` 裡的對應數值並重新跑 ANSYS 匯出到 `hung/IGES/`（直接覆蓋舊檔）
+- 零件尺寸變更時，更新 `hung/apdl/geom/export_parts.txt` 裡的對應數值並重新跑 ANSYS 匯出到 `hung/IGES/`（直接覆蓋舊檔）
+- **`hung/IGES/` 和 `hung/IGES_converted/` 必須同步更新**：任何一個零件（`.iges`）在 `IGES/` 更新後，必須重新產生對應的 `IGES_converted/` 版本。流程：
+  ```bash
+  cp hung/IGES/Part.iges hung/IGES_converted/Part.iges
+  sed -i "s/,1.0,6,,/,1.0,1,,/" hung/IGES_converted/Part.iges
+  ```
+  刪除或重命名 `.iges` 時兩邊也要同步處理。不可只改其中一邊。
 
 ## 不涉及 hung/ 時忽略此規則

@@ -36,12 +36,12 @@ Currently only **coil1** has results. Coil2–6 are pending simulation.
 cd hung/
 "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 8000 \
   -dir "results/coil1" -j "coil1" \
-  -i "apdl/MT_Hung_Simulate_Coil1.txt" -o "results/coil1/solve.out"
+  -i "apdl/variants/MT_Hung_Simulate_Coil1.txt" -o "results/coil1/solve.out"
 
 # Step 2: Export B-field data
 "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 1 -m 8000 \
   -dir "results/coil1" -j "coil1" \
-  -i "apdl/post_export_data.txt" -o "results/coil1/export_data.out"
+  -i "apdl/postproc/post_export_data.txt" -o "results/coil1/export_data.out"
 
 # Step 3: Run MATLAB scripts
 matlab -r "run('analysis/generate_figures.m')"

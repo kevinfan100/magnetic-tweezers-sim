@@ -73,12 +73,12 @@ cd hung
 
 # Run simulation (D-shape + fillet, coil 1)
 MAPDL -b -np 2 -m 8000 -dir "results/coil1/filleted" -j "coil1" \
-  -i "apdl/MT_Hung_Simulate_Coil1_filleted.txt" \
+  -i "apdl/sim/MT_Hung_Simulate_Coil1_filleted.txt" \
   -o "results/coil1/filleted/solve.out"
 
 # Export B-field data
 MAPDL -b -np 1 -m 4000 -dir "results/coil1/filleted" -j "coil1" \
-  -i "apdl/post_export_data.txt"
+  -i "apdl/postproc/post_export_data.txt"
 
 # Generate figures (MATLAB)
 run('analysis/generate_figures.m')

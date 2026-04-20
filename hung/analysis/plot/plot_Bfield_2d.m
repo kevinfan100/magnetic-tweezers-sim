@@ -1,4 +1,5 @@
-%% generate_figures.m — Hung hexapole B-field figures
+%% plot_Bfield_2d.m — Hung hexapole B-field figures
+addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'core'));
 % Generates 3 figures matching Long 2016 dissertation style:
 %   (a) Fig 2.3a: Top view XY B-field vector distribution
 %   (b) Fig 2.4a: |B| contour on XY plane (z=0), +/-300 um

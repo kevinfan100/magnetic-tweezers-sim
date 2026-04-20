@@ -1,4 +1,5 @@
-%% generate_fig_3d.m — 3D B-field vector plot for Hung hexapole
+%% plot_Bfield_3d.m — 3D B-field vector plot for Hung hexapole
+addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'core'));
 % Shows magnetic flux flow INSIDE iron structure only.
 
 clear; clc; close all;

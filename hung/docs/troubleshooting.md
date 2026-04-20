@@ -170,7 +170,7 @@ FILLET_DROP = POLE_TIP_CENTER - POLE_TIP_R = 0.082 mm
 JUNC_X = POLE_CONE_LEN - FILLET_DROP = 15.793 mm
 ```
 
-**實作：** `apdl/MT_Hung_SphereModel_filleted.txt`、`apdl/export_pole_filleted.txt`
+**實作：** `apdl/geom/MT_Hung_Assembly_Dfillet.txt`、`apdl/geom/export_pole_filleted.txt`
 
 ---
 

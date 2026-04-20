@@ -27,9 +27,9 @@ To convert to STEP for other CAD software:
 
 ## Regenerating
 When part dimensions change:
-1. Update values in `hung/apdl/export_parts.txt`
-2. Run: `MAPDL -b -np 1 -m 2000 -dir "IGES" -j "parts" -i "apdl/export_parts.txt"`
-3. For full assembly: run `apdl/MT_Hung_SphereModel.txt`, copy output to `Full_Assembly.iges`, fix unit flag with `sed -i "s/,1.0,6,,/,1.0,1,,/" Full_Assembly.iges`
+1. Update values in `hung/apdl/geom/export_parts.txt`
+2. Run: `MAPDL -b -np 1 -m 2000 -dir "IGES" -j "parts" -i "apdl/geom/export_parts.txt"`
+3. For full assembly: run `apdl/variants/MT_Hung_SphereModel.txt`, copy output to `Full_Assembly.iges`, fix unit flag with `sed -i "s/,1.0,6,,/,1.0,1,,/" Full_Assembly.iges`
 
 ## Filleted Versions (40 um diameter tip fillet)
 
@@ -53,5 +53,5 @@ replacing the mathematically sharp point with a smooth rounded tip.
 - Magic angle 54.74 deg unchanged
 
 **To regenerate:**
-- Single pole: `MAPDL ... -i apdl/export_pole_filleted.txt`
-- Full assembly: `MAPDL ... -i apdl/MT_Hung_SphereModel_filleted.txt`
+- Single pole: `MAPDL ... -i apdl/geom/export_pole_filleted.txt`
+- Full assembly: `MAPDL ... -i apdl/geom/MT_Hung_Assembly_Dfillet.txt`
