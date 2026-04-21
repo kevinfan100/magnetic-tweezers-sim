@@ -24,11 +24,10 @@ Currently only **coil1/** has populated B-field plots; coil2–6 have empty `fai
 | `Bvector_topview.png` | Top-view B-field vectors over the full model (±80 mm, Tesla) |
 | `Bvector_topview_mT.png` | Same top view, rescaled to mT (close-up near working point) |
 | `Bvector_3D_iron.png` | 3D B-field arrows inside iron only, showing flux circulation |
-| `Bfield_xy.png` | \|B\| contour on XY plane (z=0), ±300 µm around WP |
-| `Bfield_xy_filleted_sym.png` | Same slice, symmetrized about pole axes (D-shape + fillet) |
-| `Bfield_xy_round_filleted.png` | Same slice, run with the full-round + fillet pole variant (comparison) |
 | `Bcontour_P1_topview.png` | \|B\| contour at P1 tip top view |
-| `Bcontour_xa_za_actuation.png` | Actuation B-field contour on the x_a – z_a plane |
+| `Bcontour_xaza_Dfillet.png` | \|B\| contour on x_a-z_a plane (y_a=0), D+fillet 3-pass NREFINE data, 2D slab interpolation. Actuator frame: x_a→P1, y_a→P3, z_a→P5 |
+| `Bcontour_xaza_Dfillet_smooth.png` | Same view, upgraded with 3D interpolation + Gaussian smoothing; clearest production version (WP = 8.74 mT, 526,645 nodes) |
+| `Bcontour_xaza_Dshape_baseline.png` | Same view, D-shape **no fillet / no NREFINE** baseline (368,686 nodes, WP = 9.31 mT) — shown as convergence contrast to `_smooth` |
 
 ## analytic/ — Fitting & analysis figures
 
@@ -66,6 +65,11 @@ Currently only **coil1/** has populated B-field plots; coil2–6 have empty `fai
 | `hexapole_tip_annotated.png` | 6 pole tips on R=0.5 mm sphere with P1–P6 labels and l annotation |
 | `mesh_steel_filleted_3D.png` | 3D mesh visualization of steel body (D-shape + fillet, no yoke) |
 
+### Mesh convergence
+| File | Description |
+|------|-------------|
+| `WP_convergence_Hung.png` | WP \|B\| vs total mesh node count: baseline (no NREFINE, 368k, 9.31 mT) → 3-pass NREFINE (526k, 8.74 mT); Richardson asymptote ≈ 8.60 mT |
+
 ## Generating Figures
 
 Paths reflect the current post-reorg structure:
@@ -91,6 +95,8 @@ cd analysis/plot
 #   run('plot_J_quiver.m')       -> figures/analytic/fitting_J_idealKI_quiver_error.png
 #   run('plot_J_rmse.m')         -> figures/analytic/fitting_J_idealKI_RMSE.png
 #   run('plot_charge_proj.m')    -> figures/analytic/charge_projection_lower_upper.png
+#   run('plot_Bcontour_xaza.m')          -> figures/coil1/Bcontour_xaza_Dfillet_smooth.png
+#   run('plot_Bcontour_xaza_baseline.m') -> figures/coil1/Bcontour_xaza_Dshape_baseline.png
 ```
 
 Note: `plot_Bfield_2d.m` and `plot_Bfield_3d.m` save to the `figures/` root — manually move the output into the appropriate `coilN/` subfolder after each run.
