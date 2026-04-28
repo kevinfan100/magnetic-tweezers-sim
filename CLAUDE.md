@@ -3,19 +3,44 @@
 ## Quick Triggers
 - 當使用者說「**建 hexapole**」時，參照 `.claude/rules/hexapole-build.md` 執行建模流程
 - 當工作涉及 `hung/` 目錄時，參照 `.claude/rules/hung-docs.md` 讀取必要文件
+- 當使用者說「**跑計畫 1**」/「**執行 plan1**」或類似意思時，參照 `.claude/rules/workflow-plan1.md`（目前 TBD）
+- 當使用者說「**跑計畫 2**」/「**執行 plan2**」或類似意思時，參照 `.claude/rules/workflow-plan2.md`（目前 TBD）
+- 當使用者說「**跑計畫 3**」/「**執行 plan3**」或類似意思時，參照 `.claude/rules/workflow-plan3.md`（目前 TBD）
+
+## Workflow Discovery
+- `docs/plans/` 下的 workflow **跨 pole 配置通用**（hexapole 與 quadrupole 都適用）
+- 當使用者問「**有什麼計畫**」/「**列出 workflow**」/「**列出計畫**」/「**help**」/「**我可以做什麼**」等迷路求救時，讀 `docs/plans/README.md` 並摘要列給使用者
+- 當使用者的需求**意圖匹配某項 workflow** 但**沒用觸發關鍵字**時（例如用自然語言描述要做的事），Claude 主動建議：「這看起來像計畫 X，要照 SOP 執行嗎？」並引用 `docs/plans/README.md` 的對照表讓使用者選
+- 執行任何 workflow 時，依 `pole_config` 參數決定讀哪份規範：`hexapole` → `docs/hexapole-simulation-reference.md`；`quadrupole` → `docs/quadrupole-simulation-reference.md`（未來建立）
+- 三項計畫目前皆為 **TBD placeholder**：使用者觸發時 Claude 應回答「計畫 N 尚未定義，請提供名稱、目的、參數、步驟」並引導補完
 
 ## Commands
+
+### ANSYS 可用性
+
+**執行 ANSYS 前必須先確認路徑存在**。本機實際安裝位置：
+
+```
+G:\ANSYS Inc\v252\ansys\bin\winx64\MAPDL.exe
+```
+
+若路徑不存在（例如換機器或版本），在標準位置（`C:\Program Files\ANSYS Inc\<version>\...`）或其他磁碟搜尋後再跑。
+
+### 典型指令
+
 ```bash
+ANSYS="G:\ANSYS Inc\v252\ansys\bin\winx64\MAPDL.exe"
+
 # Run single coil (batch mode, no GUI) — run from hexapole-long2016/
 cd hexapole-long2016
-"C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 \
+"$ANSYS" -b -np 4 -m 24000 \
   -dir "results/coil1" -j "coil1" \
   -i "$(pwd)/apdl/MT_Modeling_Geometry_Meshing_Solving_Coil1.txt" \
   -o "results/coil1/solve.out"
 
 # Run all 6 coils sequentially
 for i in 1 2 3 4 5 6; do
-  "C:\Program Files\ANSYS2025R2\v252\ansys\bin\winx64\MAPDL.exe" -b -np 4 -m 24000 \
+  "$ANSYS" -b -np 4 -m 24000 \
     -dir "results/coil${i}" -j "coil${i}" \
     -i "$(pwd)/apdl/MT_Modeling_Geometry_Meshing_Solving_Coil${i}.txt" \
     -o "results/coil${i}/solve.out"
@@ -48,7 +73,7 @@ magnetic-tweezers-sim/                   Git root
 │   ├── notes/                           Structured Markdown notes (tracked)
 │   ├── pdfs/                            Original PDFs (gitignored)
 │   └── texts/                           pdftotext extracts (gitignored)
-└── (future: hexapole-<name>/)           Additional hexapole designs
+└── (future: hexapole-<name>/ 或 quadrupole-<name>/)   Additional designs
 ```
 
 ## Hexapole Design Constraints (Mandatory)
@@ -113,6 +138,7 @@ Key conventions:
 - `hexapole-long2016/docs/workflow.md` - 4-stage simulation-to-publication pipeline
 - `hexapole-long2016/docs/troubleshooting.md` - known errors and fixes
 - `docs/hexapole-simulation-reference.md` - **mandatory constraints + modeling procedure for all hexapole designs**
+- `docs/plans/README.md` - **cross-design workflow index** (3 planned workflows, currently TBD placeholders)
 - `references/README.md` - paper index, notes-first reading strategy
 
 ## Compact Instructions
