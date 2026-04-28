@@ -1,0 +1,78 @@
+! ====================================================================
+! [ADDED] Diagnose energy split by material:
+!   - Iron (MAT=1, μ_r=8000): use W = ∫B²/(2 × μ_r × μ_0) dV
+!   - Air  (MAT=2, μ_r=1):    use W = ∫B²/(2 × μ_0) dV
+! Test hypothesis: prior manual calc overestimated by treating iron with μ_0
+! ====================================================================
+
+! /CWD removed; use ANSYS -dir command-line arg instead
+/CLEAR, NOSTART
+/FILNAME, kuo_singlecoil_sim
+RESUME, 'sim_solved', 'db'
+/POST1
+SET, LAST
+
+MM      = 1.0e-3
+MU0     = 4*3.141592653589793*1e-7
+MU_R_FE = 8000
+
+! Build B² × V per element table
+ETABLE, BX_E, B, X
+ETABLE, BY_E, B, Y
+ETABLE, BZ_E, B, Z
+ETABLE, EVOL, VOLU
+SMULT, B2X, BX_E, BX_E, 1, 1
+SMULT, B2Y, BY_E, BY_E, 1, 1
+SMULT, B2Z, BZ_E, BZ_E, 1, 1
+SADD,  B2_XY, B2X, B2Y, 1, 1
+SADD,  B2_TOT, B2_XY, B2Z, 1, 1
+SMULT, B2V, B2_TOT, EVOL, 1, 1
+
+! ===== Iron: MAT 1 =====
+ESEL, S, MAT, , 1
+*GET, NE_FE, ELEM, , COUNT
+SSUM, , B2V
+*GET, INT_FE, SSUM, 0, ITEM, B2V
+W_FE_PROPER = INT_FE/(2*MU_R_FE*MU0)
+W_FE_NAIVE  = INT_FE/(2*MU0)
+*MSG, INFO, NE_FE, INT_FE
+ IRON_ELEMS= %I  IRON_INT_B2V= %G
+*MSG, INFO, W_FE_PROPER
+ IRON_W_PROPER_DIVIDED_BY_MU_R = %G JOULES
+*MSG, INFO, W_FE_NAIVE
+ IRON_W_NAIVE_DIVIDED_BY_MU0   = %G JOULES
+
+! ===== Air: MAT 2 =====
+ESEL, S, MAT, , 2
+*GET, NE_AIR, ELEM, , COUNT
+SSUM, , B2V
+*GET, INT_AIR, SSUM, 0, ITEM, B2V
+W_AIR = INT_AIR/(2*MU0)
+*MSG, INFO, NE_AIR, INT_AIR
+ AIR_ELEMS= %I  AIR_INT_B2V= %G
+*MSG, INFO, W_AIR
+ AIR_W = %G JOULES
+
+! ===== Totals =====
+W_TOT_PROPER = W_FE_PROPER + W_AIR
+L_PROPER     = 2*W_TOT_PROPER
+
+W_TOT_NAIVE = W_FE_NAIVE + W_AIR
+L_NAIVE     = 2*W_TOT_NAIVE
+
+*MSG, INFO, W_TOT_PROPER, L_PROPER
+ W_PROPER= %G JOULES, L_PROPER= %G HENRY
+*MSG, INFO, W_TOT_NAIVE, L_NAIVE
+ W_NAIVE= %G JOULES, L_NAIVE= %G HENRY
+
+! ===== Also check max |B| in iron =====
+ETABLE, BSUM_E, B, SUM      ! magnitude of B vector
+ESEL, S, MAT, , 1
+ESORT, ETAB, BSUM_E, 0      ! sort descending
+*GET, B_MAX_FE, SORT, 0, MAX
+*MSG, INFO, B_MAX_FE
+ MAX_BMAG_IN_IRON = %G TESLA
+
+ALLSEL, ALL
+FINISH
+/EXIT, NOSAV

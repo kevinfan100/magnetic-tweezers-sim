@@ -1,0 +1,114 @@
+! ====================================================================
+! [ADDED] Kuo Quadrupole geometry - 4-pole MEMS, modeled after
+!         Harrison 2015 PRSTAB / 2014 JMEMS.
+! Output: kuo/IGES/Quadrupole_Lp067.iges
+!
+! Geometry construction:
+!   - 4 cone-shaped poles, cone apex coincident with workspace center (origin)
+!   - Half-taper 7.5 deg per side (paper value)
+!   - Tip fillet 45 um (from STEP), tangent to both cone sides
+!   - Fillet apex (closest to origin) at MAGNET_R = 0.300 mm
+!   - Yoke: circular ring (inner 0.9748, outer 1.1748 mm)
+!   - Z thickness 0.055 mm, centered on z = 0 (mid-plane symmetric)
+!   - Pole stalk radial length = YOKE_RI - MAGNET_R = 0.6748 mm (file name 0.67mm)
+!
+! Convention: IGES export uses MM = 1.0/25.4 so SolidWorks reads back as mm.
+! ====================================================================
+
+/CWD,'G:\my_workspace\code\magnetic-tweezers-sim\kuo\IGES'
+
+/CLEAR, NOSTART
+/PREP7
+*afun, DEG
+BTOL, 1e-5
+MM = 1.0/25.4
+
+! ========== Main parameters (paper + STEP) ==========
+MAGNET_R       = 0.300*MM     ! Fillet apex to origin (= magnet radius)
+HALF_TAPER     = 7.5          ! Pole half-taper, degrees (paper value)
+TIP_FILLET_R   = 0.045*MM     ! Tip fillet radius (from STEP)
+YOKE_RI        = 0.760*MM     ! [MODIFIED] Yoke inner radius — fitted L_P = 0.46 mm: YOKE_RI = MAGNET_R + L_P = 0.30 + 0.46
+YOKE_RO        = 0.960*MM     ! [MODIFIED] Yoke outer radius — keep 0.2 mm wall thickness
+T_Z            = 0.1000*MM    ! [MODIFIED] Z thickness — was 0.0550, changed to 0.1000 to match JMEMS Fig 5
+
+! [USER] Pole length is the initial guess for FEM calibration.
+! POLE_LENGTH = YOKE_RI - MAGNET_R = 0.6748 mm (origin of file name 0.67mm)
+! Later sweep: vary YOKE_RI = MAGNET_R + POLE_LENGTH to change pole length.
+
+! ========== Derived (cone + tangent fillet) ==========
+FILLET_CENTER_R = TIP_FILLET_R/sin(HALF_TAPER)        ! Fillet center to origin
+TANGENT_R       = FILLET_CENTER_R*cos(HALF_TAPER)     ! Fillet-cone tangent point to origin
+
+! Z origin = mid-plane symmetric
+Z_BOT = -T_Z/2
+
+! ========== Reference KP at origin (yoke arc center) ==========
+K, 1, 0, 0, Z_BOT
+
+! ========== Build 4 pole 2D cross-sections at z = Z_BOT ==========
+*do, I_POLE, 1, 4
+    ANG_C = -135 + 90*(I_POLE-1)   ! Pole axis azimuth: -135, -45, 45, 135
+    ANG_S = ANG_C - HALF_TAPER     ! South cone side
+    ANG_N = ANG_C + HALF_TAPER     ! North cone side
+
+    *get, KP_NUM, KP, , NUM, MAX
+    KP_S = KP_NUM + 1
+
+    ! 5 KPs per pole:
+    !   KP_S+0  KA: south yoke connection
+    !   KP_S+1  KB: north yoke connection
+    !   KP_S+2  KC: north fillet-cone tangent point
+    !   KP_S+3  KD: south fillet-cone tangent point
+    !   KP_S+4  KE: fillet center (used as LARC center reference)
+    K, KP_S,   YOKE_RI*cos(ANG_S),         YOKE_RI*sin(ANG_S),         Z_BOT
+    K, KP_S+1, YOKE_RI*cos(ANG_N),         YOKE_RI*sin(ANG_N),         Z_BOT
+    K, KP_S+2, TANGENT_R*cos(ANG_N),       TANGENT_R*sin(ANG_N),       Z_BOT
+    K, KP_S+3, TANGENT_R*cos(ANG_S),       TANGENT_R*sin(ANG_S),       Z_BOT
+    K, KP_S+4, FILLET_CENTER_R*cos(ANG_C), FILLET_CENTER_R*sin(ANG_C), Z_BOT
+
+    *get, LI_NUM, LINE, , NUM, MAX
+    LI_S = LI_NUM + 1
+    NUMSTR, LINE, LI_S
+
+    ! 4 lines forming pole boundary (CCW):
+    !   L1 (LI_S+0): yoke arc, KA -> KB, center at KP=1 (origin), radius YOKE_RI
+    !   L2 (LI_S+1): north cone side, KB -> KC (radial line)
+    !   L3 (LI_S+2): tip fillet arc, KC -> KD, center at KE, radius TIP_FILLET_R
+    !   L4 (LI_S+3): south cone side, KD -> KA (radial line)
+    LARC, KP_S,   KP_S+1, 1,       YOKE_RI
+    L,    KP_S+1, KP_S+2
+    LARC, KP_S+2, KP_S+3, KP_S+4, TIP_FILLET_R
+    L,    KP_S+3, KP_S
+
+    *get, AR_NUM, AREA, , NUM, MAX
+    AR_S = AR_NUM + 1
+    NUMSTR, AREA, AR_S
+    AL, LI_S, LI_S+1, LI_S+2, LI_S+3
+
+    *msg, INFO, I_POLE, ANG_C
+     Pole #%I built at azimuth %G deg
+*enddo
+
+! ========== Yoke ring 2D area at z = Z_BOT ==========
+! Use working plane offset to put PCIRC at correct z
+WPOFFS, 0, 0, Z_BOT
+PCIRC, YOKE_RO, YOKE_RI, 0, 360
+WPOFFS, 0, 0, -Z_BOT
+
+! ========== Extrude all 5 2D areas to 3D volumes ==========
+ASEL, ALL
+VEXT, ALL, , , 0, 0, T_Z
+
+! ========== Boolean union: 4 poles + yoke ring -> single volume ==========
+VSEL, ALL
+VADD, ALL
+
+! ========== Export IGES ==========
+ALLSEL, ALL
+IGESOUT, 'Quadrupole_Lp046_T100', 'iges'
+
+*msg, INFO
+ Kuo Quadrupole IGES export complete.
+
+FINISH
+/EXIT, NOSAV

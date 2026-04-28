@@ -1,0 +1,106 @@
+! ====================================================================
+! [ADDED] Post-processing for Kuo Quadrupole dipole sim
+!         Extract metrics matching JMEMS 2014 Fig 5:
+!           1. Inductance L (target: 32.2 nH)
+!           2. ∫B_y dz (cumulative integral, last value = total)
+!           3. B_y(0,0,z), B_y(x,0,0), B_y(0,y,0) line profiles
+!
+! Strategy: ANSYS *VGET on PATH user-defined labels is unreliable;
+! use PRPATH to dump tables to log and parse externally.
+! Scalar metrics (W, L) extracted via *MSG.
+! ====================================================================
+
+/CWD,'G:\my_workspace\code\magnetic-tweezers-sim\kuo\results\Lp067_T100_dipole'
+
+/CLEAR, NOSTART
+/FILNAME, kuo_dipole_sim       ! Point to original sim's .rmg file
+RESUME, 'sim_solved', 'db'
+/POST1
+SET, LAST
+
+MM = 1.0e-3
+
+! ============================================================
+! 1a. Inductance via SENE (built-in) — likely incomplete for scalar potential
+! ============================================================
+ETABLE, ENRG, SENE
+SSUM, , ENRG
+*GET, W_SENE, SSUM, 0, ITEM, ENRG
+L_SENE = 2*W_SENE/(1.0*1.0)
+
+*MSG, INFO, W_SENE
+ STORED_ENERGY_W_SENE = %G JOULES
+*MSG, INFO, L_SENE
+ INDUCTANCE_L_SENE = %G HENRY
+
+! ============================================================
+! 1b. Inductance via manual B^2 integration (more reliable for scalar potential)
+!     W = ∫ |B|² / (2μ₀) dV summed over all elements
+! ============================================================
+ETABLE, BX_E, B, X
+ETABLE, BY_E, B, Y
+ETABLE, BZ_E, B, Z
+ETABLE, EVOL, VOLU
+
+SMULT, BX2, BX_E, BX_E, 1, 1
+SMULT, BY2, BY_E, BY_E, 1, 1
+SMULT, BZ2, BZ_E, BZ_E, 1, 1
+SADD, B2_XY, BX2, BY2, 1, 1
+SADD, B2_TOT, B2_XY, BZ2, 1, 1
+SMULT, B2V, B2_TOT, EVOL, 1, 1
+SSUM, , B2V
+*GET, INT_B2V, SSUM, 0, ITEM, B2V
+
+MU0_VAL  = 4*3.141592653589793*1e-7
+W_MANUAL = INT_B2V/(2*MU0_VAL)
+L_MANUAL = 2*W_MANUAL/(1.0*1.0)
+
+*MSG, INFO, INT_B2V
+ INTEGRAL_B2_DV = %G T2_M3
+*MSG, INFO, W_MANUAL
+ STORED_ENERGY_W_MANUAL = %G JOULES
+*MSG, INFO, L_MANUAL
+ INDUCTANCE_L_MANUAL = %G HENRY
+
+! ============================================================
+! 2. Path along z-axis: B_y(0,0,z), and ∫B_y dz via PCALC
+! ============================================================
+PATH, BZ_PATH, 2, 30, 400
+PPATH, 1, , 0, 0, -2.0*MM
+PPATH, 2, , 0, 0, +2.0*MM
+PDEF, BY, B, Y
+PCALC, INTG, IBY, BY, S        ! cumulative integral; "FINAL SUMMATION" printed in log
+
+*MSG, INFO
+ ===== PATH DATA: B_y along z-axis (beam axis) =====
+PRPATH, BY, IBY                ! dumps full table to log
+
+! ============================================================
+! 3. Path along x-axis: B_y(x,0,0)
+! ============================================================
+PATH, BX_PATH, 2, 30, 200
+PPATH, 1, , -0.5*MM, 0, 0
+PPATH, 2, , +0.5*MM, 0, 0
+PDEF, BY, B, Y
+
+*MSG, INFO
+ ===== PATH DATA: B_y along x-axis (transverse) =====
+PRPATH, BY
+
+! ============================================================
+! 4. Path along y-axis: B_y(0,y,0)
+! ============================================================
+PATH, BY_AXIS, 2, 30, 200
+PPATH, 1, , 0, -0.5*MM, 0
+PPATH, 2, , 0, +0.5*MM, 0
+PDEF, BY, B, Y
+
+*MSG, INFO
+ ===== PATH DATA: B_y along y-axis (dipole direction) =====
+PRPATH, BY
+
+*MSG, INFO
+ ===== POST-PROCESSING COMPLETE =====
+
+FINISH
+/EXIT, NOSAV

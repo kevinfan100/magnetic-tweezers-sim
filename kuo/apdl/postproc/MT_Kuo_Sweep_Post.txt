@@ -1,0 +1,24 @@
+! ====================================================================
+! [ADDED] Sweep-only post-proc: extract B_y(0,0,z) line for parsing
+! Outputs PRPATH dump to log; bash awk extracts |B_y peak| and ∫B_y dz.
+! ====================================================================
+
+/CLEAR, NOSTART
+/FILNAME, kuo_dipole_sim
+RESUME, 'sim_solved', 'db'
+/POST1
+SET, LAST
+
+MM = 1.0e-3
+
+! Path along z-axis: B_y(0,0,z), z in [-2 mm, +2 mm]
+PATH, BZ_PATH, 2, 30, 400
+PPATH, 1, , 0, 0, -2.0*MM
+PPATH, 2, , 0, 0, +2.0*MM
+PDEF, BY, B, Y
+PCALC, INTG, IBY, BY, S         ! "FINAL SUMMATION = ..." line gives ∫B_y dz
+
+PRPATH, BY, IBY                 ! dump full table for bash awk parsing
+
+FINISH
+/EXIT, NOSAV

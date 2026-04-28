@@ -1,0 +1,255 @@
+! ====================================================================
+! [ADDED] Kuo Quadrupole simulation - dipole +y mode at I = 1 A
+!         Modeled after Harrison 2014 JMEMS Fig 5
+!
+! Geometry: 4 cone-shaped poles + circular yoke ring, T_Z = 0.100 mm
+!           (matches JMEMS prototype thickness, used for fit basis)
+!
+! Coil setup (from JMEMS Section II):
+!   - 4 turns per coil
+!   - 1 A drive current
+!   - Excitation pattern: dipole +y (top poles N, bottom poles S)
+!     CURR_ARRAY = [-1, -1, +1, +1] for poles at -135, -45, +45, +135 deg
+!
+! Coordinate convention (matches JMEMS Fig 5 inset y-z-x):
+!   - x, y in-plane (xy = magnet plane)
+!   - z perpendicular to magnet plane (= beam axis)
+!   - Origin at quadrupole center, mid-plane symmetric (z in [-T_Z/2, +T_Z/2])
+!
+! Output: sim_solved.db in kuo/results/Lp067_T100_dipole/
+! ====================================================================
+
+! /CWD removed: use ANSYS -dir command-line arg instead (set by sweep wrapper)
+
+/CLEAR, NOSTART
+/PREP7
+*afun, DEG
+BTOL, 1e-7
+
+! ========== Units: MKS ==========
+MM = 1.0e-3
+
+! ========== Read sweep variable L_P from external param file ==========
+! lp_param.inp defines L_P_VAL (in meters); only swept variable
+/INPUT, 'lp_param', 'inp', 'G:\my_workspace\code\magnetic-tweezers-sim\kuo\apdl\sim\'
+
+! ========== Geometry parameters (paper, all FIXED except L_P) ==========
+HALF_TAPER     = 7.5
+TIP_FILLET_R   = 0.045*MM
+T_Z            = 0.100*MM
+YOKE_WALL      = 0.200*MM       ! yoke ring wall thickness, fixed
+
+! Derived (cone + tangent fillet)
+FILLET_CENTER_R = TIP_FILLET_R/sin(HALF_TAPER)
+TANGENT_R       = FILLET_CENTER_R*cos(HALF_TAPER)
+MAGNET_R        = FILLET_CENTER_R - TIP_FILLET_R   ! = 0.300 mm (fillet apex to origin)
+
+! Derived from sweep variable L_P_VAL
+YOKE_RI         = MAGNET_R + L_P_VAL
+YOKE_RO         = YOKE_RI + YOKE_WALL
+
+Z_BOT = -T_Z/2
+
+! ========== Air domain (BC test confirmed 5 mm sufficient) ==========
+AIR_R = 5.0*MM
+AIR_Z = 10.0*MM
+
+! ========== Coil parameters (JMEMS 2014, all FIXED) ==========
+TURNS         = 4
+DRIVE_CURRENT = 1.0
+COIL_R        = (YOKE_RI + MAGNET_R)/2    ! pole midpoint, follows L_P
+COIL_MEAN_R   = 0.10*MM
+COIL_DY       = 0.025*MM
+COIL_DZ       = 0.20*MM
+
+! ========== Dipole +y excitation (Fig 5 alignment) ==========
+*dim, CURR_ARRAY, , 4
+CURR_ARRAY(1) = -1   ! Pole 1 at -135 deg (bottom-left), S
+CURR_ARRAY(2) = -1   ! Pole 2 at  -45 deg (bottom-right), S
+CURR_ARRAY(3) = +1   ! Pole 3 at  +45 deg (top-right), N
+CURR_ARRAY(4) = +1   ! Pole 4 at +135 deg (top-left), N
+
+! ========== Build magnet: 4 cone-poles + yoke ring at z = Z_BOT ==========
+
+! Reference KP at origin (yoke arc center)
+K, 1, 0, 0, Z_BOT
+
+*do, I_POLE, 1, 4
+    ANG_C = -135 + 90*(I_POLE-1)
+    ANG_S = ANG_C - HALF_TAPER
+    ANG_N = ANG_C + HALF_TAPER
+
+    *get, KP_NUM, KP, , NUM, MAX
+    KP_S = KP_NUM + 1
+
+    K, KP_S,   YOKE_RI*cos(ANG_S),         YOKE_RI*sin(ANG_S),         Z_BOT
+    K, KP_S+1, YOKE_RI*cos(ANG_N),         YOKE_RI*sin(ANG_N),         Z_BOT
+    K, KP_S+2, TANGENT_R*cos(ANG_N),       TANGENT_R*sin(ANG_N),       Z_BOT
+    K, KP_S+3, TANGENT_R*cos(ANG_S),       TANGENT_R*sin(ANG_S),       Z_BOT
+    K, KP_S+4, FILLET_CENTER_R*cos(ANG_C), FILLET_CENTER_R*sin(ANG_C), Z_BOT
+    K, KP_S+5, MAGNET_R*cos(ANG_C),        MAGNET_R*sin(ANG_C),        Z_BOT  ! [ADDED] fillet apex (closest to origin)
+
+    *get, LI_NUM, LINE, , NUM, MAX
+    LI_S = LI_NUM + 1
+    NUMSTR, LINE, LI_S
+
+    LARC, KP_S,   KP_S+1, 1, YOKE_RI                   ! L1: yoke arc (0.97 mm radius, LARC OK)
+    L,    KP_S+1, KP_S+2                               ! L2: north cone side
+    BSPLIN, KP_S+2, KP_S+5, KP_S+3                     ! L3: fillet (BSPLIN through tangent N -> apex -> tangent S; LARC fails for r < 0.1 mm in MKS)
+    L,    KP_S+3, KP_S                                 ! L4: south cone side
+
+    *get, AR_NUM, AREA, , NUM, MAX
+    AR_S = AR_NUM + 1
+    NUMSTR, AREA, AR_S
+    AL, LI_S, LI_S+1, LI_S+2, LI_S+3
+*enddo
+
+! Yoke ring 2D area at z = Z_BOT
+WPOFFS, 0, 0, Z_BOT
+PCIRC, YOKE_RO, YOKE_RI, 0, 360
+WPOFFS, 0, 0, -Z_BOT
+
+! Extrude all 5 areas to volumes, VADD into single magnet volume
+ASEL, ALL
+VEXT, ALL, , , 0, 0, T_Z
+VSEL, ALL
+VADD, ALL
+*get, V_MAG, VOLU, , NUM, MAX
+
+! ========== Build air cylinder enclosing magnet ==========
+! After VADD, ANSYS may reuse destroyed volume IDs for new CYLIND.
+! Use deselect V_MAG to find the new air cylinder ID safely.
+CYLIND, AIR_R, 0, -AIR_Z, AIR_Z, 0, 360
+ALLSEL, ALL
+VSEL, ALL
+VSEL, U, VOLU, , V_MAG
+*get, V_AIR_CYL, VOLU, , NUM, MAX
+ALLSEL, ALL
+
+! Boolean: subtract magnet from air, keep magnet
+VSBV, V_AIR_CYL, V_MAG, , DELETE, KEEP
+
+! Find new air-with-hole volume (not V_MAG):
+ALLSEL, ALL
+VSEL, ALL
+VSEL, U, VOLU, , V_MAG
+*get, V_AIR, VOLU, , NUM, MAX
+ALLSEL, ALL
+
+! ========== Element types ==========
+ET, 1, SOLID96
+ET, 2, SOURC36
+
+! ========== Materials ==========
+MP, MURX, 1, 8000     ! Permalloy Ni80Fe20 (linear, paper-cited bulk mu_r)
+MP, MURX, 2, 1        ! Air
+
+! ========== Volume attributes ==========
+VSEL, S, VOLU, , V_MAG
+VATT, 1, , 1
+VSEL, S, VOLU, , V_AIR
+VATT, 2, , 1
+ALLSEL, ALL
+
+! ========== Mesh ==========
+MSHAPE, 1, 3D
+MSHKEY, 0
+
+! Magnet: moderate (was 0.025; reduced to 0.05 to limit element count)
+VSEL, S, VOLU, , V_MAG
+ESIZE, 0.05*MM
+VMESH, ALL
+ALLSEL, ALL
+
+! Air: coarser
+VSEL, S, VOLU, , V_AIR
+ESIZE, 0.7*MM
+VMESH, ALL
+ALLSEL, ALL
+
+*get, NN, NODE, 0, COUNT
+*get, NE, ELEM, 0, COUNT
+*msg, INFO, NN, NE
+ Mesh complete: nodes=%I  elements=%I
+
+! ========== SOURC36 coils (4 coils, dipole +y mode) ==========
+
+! Real Constants per coil
+*do, sc_ri, 1, 4
+    NI_VALUE = TURNS*CURR_ARRAY(sc_ri)*DRIVE_CURRENT
+    R, sc_ri, 1, NI_VALUE, COIL_DY, COIL_DZ
+*enddo
+
+! Get current max node number for SOURC36 nodes (avoid overlapping mesh nodes)
+NUMCMP, NODE
+*get, NODE_NUM, NODE, , NUM, MAX
+NODE_START = NODE_NUM + 1
+
+*do, sc_pi, 1, 4
+    sc_ang = -135 + 90*(sc_pi-1)
+    sc_cx = COIL_R*cos(sc_ang)
+    sc_cy = COIL_R*sin(sc_ang)
+    sc_cz = 0
+
+    sc_n1 = NODE_START + (sc_pi-1)*3
+    sc_n2 = sc_n1 + 1
+    sc_n3 = sc_n1 + 2
+
+    ! N1 (I-node): K + COIL_MEAN_R * tangential_direction
+    !   tangential = (-sin(ang), cos(ang), 0)
+    N, sc_n1, sc_cx - COIL_MEAN_R*sin(sc_ang), sc_cy + COIL_MEAN_R*cos(sc_ang), sc_cz
+    ! N2 (J-node): K + COIL_MEAN_R * z_direction
+    N, sc_n2, sc_cx, sc_cy, sc_cz + COIL_MEAN_R
+    ! N3 (K-node): coil center on pole axis
+    N, sc_n3, sc_cx, sc_cy, sc_cz
+
+    ! Coil normal: (N1-N3) x (N2-N3) = +radial direction
+    ! Sign of NI determines pole polarity (+NI = N pole, -NI = S pole)
+    TYPE, 2
+    REAL, sc_pi
+    E, sc_n1, sc_n2, sc_n3
+*enddo
+
+*msg, INFO
+ SOURC36 coils built (4 coils, dipole +y excitation)
+
+ALLSEL, ALL
+SAVE, 'sim_built', 'db'
+
+! ========== /SOLU ==========
+FINISH
+/SOLU
+
+! BC: D, ALL, MAG, 0 on outer surfaces of air cylinder
+ALLSEL, ALL
+
+! Top face (z = +AIR_Z)
+NSEL, S, LOC, Z, AIR_Z - 1.0e-6, AIR_Z + 1.0e-6
+D, ALL, MAG, 0
+ALLSEL, ALL
+
+! Bottom face (z = -AIR_Z)
+NSEL, S, LOC, Z, -AIR_Z - 1.0e-6, -AIR_Z + 1.0e-6
+D, ALL, MAG, 0
+ALLSEL, ALL
+
+! Cylindrical side surface (r = AIR_R)
+LOCAL, 99, 1, 0, 0, 0    ! cylindrical CS at origin
+CSYS, 99
+NSEL, S, LOC, X, AIR_R*0.99, AIR_R*1.01    ! "X" in cyl CS = R
+D, ALL, MAG, 0
+CSYS, 0
+ALLSEL, ALL
+
+! ========== Solve ==========
+magsolv, 3, , , , , 1
+
+FINISH
+
+! ========== Save solved DB ==========
+/POST1
+SET, LAST
+SAVE, 'sim_solved', 'db'
+FINISH
+
+/EXIT, NOSAV

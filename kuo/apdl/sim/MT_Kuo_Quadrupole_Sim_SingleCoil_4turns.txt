@@ -1,0 +1,228 @@
+! ====================================================================
+! [ADDED] Kuo Quadrupole simulation - SINGLE COIL with 4 SOURC36 elements
+!         per pole (each modeling one turn of the 4-turn winding).
+!
+! Differences from MT_Kuo_Quadrupole_Sim_SingleCoil.txt:
+!   - Per active pole: 4 SOURC36 elements at 4 radial positions, each NI=1
+!     (instead of 1 SOURC36 with NI=4 modeling the bundle as one big loop)
+!   - This better matches the physical 4-turn coil: 4 individual loops at
+!     slightly different radial positions along pole axis
+!
+! Goal: see if proper 4-turn modeling brings L closer to PRSTAB 32 nH/pole
+! Setup: T_Z = 0.055 mm, L_P = 0.46 mm, only Pole 3 active
+! ====================================================================
+
+/CLEAR, NOSTART
+/PREP7
+*afun, DEG
+BTOL, 1e-7
+
+MM = 1.0e-3
+
+/INPUT, 'lp_param', 'inp', 'G:\my_workspace\code\magnetic-tweezers-sim\kuo\apdl\sim\'
+
+! ========== Geometry parameters ==========
+HALF_TAPER     = 7.5
+TIP_FILLET_R   = 0.045*MM
+T_Z            = 0.055*MM       ! PRSTAB prototype thickness
+YOKE_WALL      = 0.200*MM
+
+FILLET_CENTER_R = TIP_FILLET_R/sin(HALF_TAPER)
+TANGENT_R       = FILLET_CENTER_R*cos(HALF_TAPER)
+MAGNET_R        = FILLET_CENTER_R - TIP_FILLET_R
+
+YOKE_RI         = MAGNET_R + L_P_VAL
+YOKE_RO         = YOKE_RI + YOKE_WALL
+
+Z_BOT = -T_Z/2
+
+AIR_R = 5.0*MM
+AIR_Z = 10.0*MM
+
+! ========== Coil parameters (4 individual turns per pole) ==========
+NUM_TURNS         = 4
+DRIVE_CURRENT     = 1.0
+COIL_R            = (YOKE_RI + MAGNET_R)/2    ! pole stalk midpoint, radial
+COIL_MEAN_R       = 0.10*MM                   ! loop radius around pole stalk
+COIL_DY           = 0.025*MM                  ! per-conductor radial extent
+COIL_DZ_PER_TURN  = 0.025*MM                  ! single-turn axial thickness (Cu)
+COIL_BUNDLE_DZ    = 0.20*MM                   ! 4-turn bundle radial spread along pole axis
+TURN_SPACING      = COIL_BUNDLE_DZ/NUM_TURNS  ! = 0.05 mm between turn centers
+
+! ========== Single-coil excitation: only Pole 3 ==========
+*dim, CURR_ARRAY, , 4
+CURR_ARRAY(1) = 0
+CURR_ARRAY(2) = 0
+CURR_ARRAY(3) = 1
+CURR_ARRAY(4) = 0
+
+! ========== Build magnet ==========
+K, 1, 0, 0, Z_BOT
+
+*do, I_POLE, 1, 4
+    ANG_C = -135 + 90*(I_POLE-1)
+    ANG_S = ANG_C - HALF_TAPER
+    ANG_N = ANG_C + HALF_TAPER
+
+    *get, KP_NUM, KP, , NUM, MAX
+    KP_S = KP_NUM + 1
+
+    K, KP_S,   YOKE_RI*cos(ANG_S),         YOKE_RI*sin(ANG_S),         Z_BOT
+    K, KP_S+1, YOKE_RI*cos(ANG_N),         YOKE_RI*sin(ANG_N),         Z_BOT
+    K, KP_S+2, TANGENT_R*cos(ANG_N),       TANGENT_R*sin(ANG_N),       Z_BOT
+    K, KP_S+3, TANGENT_R*cos(ANG_S),       TANGENT_R*sin(ANG_S),       Z_BOT
+    K, KP_S+4, FILLET_CENTER_R*cos(ANG_C), FILLET_CENTER_R*sin(ANG_C), Z_BOT
+    K, KP_S+5, MAGNET_R*cos(ANG_C),        MAGNET_R*sin(ANG_C),        Z_BOT
+
+    *get, LI_NUM, LINE, , NUM, MAX
+    LI_S = LI_NUM + 1
+    NUMSTR, LINE, LI_S
+
+    LARC, KP_S,   KP_S+1, 1, YOKE_RI
+    L,    KP_S+1, KP_S+2
+    BSPLIN, KP_S+2, KP_S+5, KP_S+3
+    L,    KP_S+3, KP_S
+
+    *get, AR_NUM, AREA, , NUM, MAX
+    AR_S = AR_NUM + 1
+    NUMSTR, AREA, AR_S
+    AL, LI_S, LI_S+1, LI_S+2, LI_S+3
+*enddo
+
+WPOFFS, 0, 0, Z_BOT
+PCIRC, YOKE_RO, YOKE_RI, 0, 360
+WPOFFS, 0, 0, -Z_BOT
+
+ASEL, ALL
+VEXT, ALL, , , 0, 0, T_Z
+VSEL, ALL
+VADD, ALL
+*get, V_MAG, VOLU, , NUM, MAX
+
+! ========== Air ==========
+CYLIND, AIR_R, 0, -AIR_Z, AIR_Z, 0, 360
+ALLSEL, ALL
+VSEL, ALL
+VSEL, U, VOLU, , V_MAG
+*get, V_AIR_CYL, VOLU, , NUM, MAX
+ALLSEL, ALL
+
+VSBV, V_AIR_CYL, V_MAG, , DELETE, KEEP
+
+ALLSEL, ALL
+VSEL, ALL
+VSEL, U, VOLU, , V_MAG
+*get, V_AIR, VOLU, , NUM, MAX
+ALLSEL, ALL
+
+! ========== Element types ==========
+ET, 1, SOLID96
+ET, 2, SOURC36
+
+MP, MURX, 1, 8000
+MP, MURX, 2, 1
+
+VSEL, S, VOLU, , V_MAG
+VATT, 1, , 1
+VSEL, S, VOLU, , V_AIR
+VATT, 2, , 1
+ALLSEL, ALL
+
+! ========== Mesh ==========
+MSHAPE, 1, 3D
+MSHKEY, 0
+
+VSEL, S, VOLU, , V_MAG
+ESIZE, 0.05*MM
+VMESH, ALL
+ALLSEL, ALL
+
+VSEL, S, VOLU, , V_AIR
+ESIZE, 0.7*MM
+VMESH, ALL
+ALLSEL, ALL
+
+! ========== SOURC36: 4 turns per active pole ==========
+NUMCMP, NODE
+*get, NODE_NUM, NODE, , NUM, MAX
+NODE_START = NODE_NUM + 1
+
+REAL_COUNT = 0
+N_OFFSET   = 0
+
+*do, sc_pi, 1, 4
+    *if, CURR_ARRAY(sc_pi), NE, 0, THEN
+        sc_ang = -135 + 90*(sc_pi-1)
+        ax_x = cos(sc_ang)    ! pole axis unit vector x-component
+        ax_y = sin(sc_ang)    ! pole axis unit vector y-component
+        tg_x = -sin(sc_ang)   ! tangential unit vector (perp to pole axis, in xy plane)
+        tg_y =  cos(sc_ang)
+
+        *do, turn_i, 1, NUM_TURNS
+            ! Radial offset of this turn from pole midpoint, along pole axis
+            r_offset = (turn_i - (NUM_TURNS+1)/2)*TURN_SPACING
+            r_turn   = COIL_R + r_offset
+
+            sc_cx = r_turn*ax_x
+            sc_cy = r_turn*ax_y
+            sc_cz = 0
+
+            REAL_COUNT = REAL_COUNT + 1
+
+            ! NI per turn = 1 turn × CURR_ARRAY × DRIVE_CURRENT
+            NI_VAL = 1.0*CURR_ARRAY(sc_pi)*DRIVE_CURRENT
+            R, REAL_COUNT, 1, NI_VAL, COIL_DY, COIL_DZ_PER_TURN
+
+            sc_n1 = NODE_START + N_OFFSET
+            sc_n2 = sc_n1 + 1
+            sc_n3 = sc_n1 + 2
+            N_OFFSET = N_OFFSET + 3
+
+            ! N1: K + COIL_MEAN_R * tangential direction
+            N, sc_n1, sc_cx + COIL_MEAN_R*tg_x, sc_cy + COIL_MEAN_R*tg_y, sc_cz
+            ! N2: K + COIL_MEAN_R * z direction
+            N, sc_n2, sc_cx, sc_cy, sc_cz + COIL_MEAN_R
+            ! N3: turn center
+            N, sc_n3, sc_cx, sc_cy, sc_cz
+
+            TYPE, 2
+            REAL, REAL_COUNT
+            E, sc_n1, sc_n2, sc_n3
+        *enddo
+    *endif
+*enddo
+
+*msg, INFO, REAL_COUNT
+ SOURC36 elements built: %I (each NI=1, single-coil 4-turn mode, only Pole 3)
+
+ALLSEL, ALL
+SAVE, 'sim_built', 'db'
+
+! ========== /SOLU ==========
+FINISH
+/SOLU
+
+ALLSEL, ALL
+NSEL, S, LOC, Z, AIR_Z - 1.0e-6, AIR_Z + 1.0e-6
+D, ALL, MAG, 0
+ALLSEL, ALL
+NSEL, S, LOC, Z, -AIR_Z - 1.0e-6, -AIR_Z + 1.0e-6
+D, ALL, MAG, 0
+ALLSEL, ALL
+LOCAL, 99, 1, 0, 0, 0
+CSYS, 99
+NSEL, S, LOC, X, AIR_R*0.99, AIR_R*1.01
+D, ALL, MAG, 0
+CSYS, 0
+ALLSEL, ALL
+
+magsolv, 3, , , , , 1
+
+FINISH
+
+/POST1
+SET, LAST
+SAVE, 'sim_solved', 'db'
+FINISH
+
+/EXIT, NOSAV

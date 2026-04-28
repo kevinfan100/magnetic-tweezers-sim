@@ -1,0 +1,103 @@
+! ====================================================================
+! [ADDED] Diagnose energy distribution: ∫B²/2μ₀ dV over radial shells
+! Shells:
+!   1. r < 1 mm  (near magnet body, expected to hold most energy)
+!   2. 1 < r < 2 mm
+!   3. 2 < r < 3 mm
+!   4. 3 < r < 5 mm (boundary region)
+!
+! Compare to total to see if energy concentrated near magnet (correct)
+! or spread to boundary (BC/source-field issue).
+! ====================================================================
+
+/CWD,'G:\my_workspace\code\magnetic-tweezers-sim\kuo\results\Lp067_T100_dipole'
+
+/CLEAR, NOSTART
+/FILNAME, kuo_dipole_sim
+RESUME, 'sim_solved', 'db'
+/POST1
+SET, LAST
+
+MM     = 1.0e-3
+MU0    = 4*3.141592653589793*1e-7
+
+! Spherical CS at origin (CSYS=11, type=2 spherical)
+LOCAL, 11, 2, 0, 0, 0
+CSYS, 0    ! keep working in Cartesian
+
+! Compute B² × V on all elements first (full domain reference)
+ETABLE, BX_E, B, X
+ETABLE, BY_E, B, Y
+ETABLE, BZ_E, B, Z
+ETABLE, EVOL, VOLU
+SMULT, B2X, BX_E, BX_E, 1, 1
+SMULT, B2Y, BY_E, BY_E, 1, 1
+SMULT, B2Z, BZ_E, BZ_E, 1, 1
+SADD,  B2_XY, B2X, B2Y, 1, 1
+SADD,  B2_TOT, B2_XY, B2Z, 1, 1
+SMULT, B2V, B2_TOT, EVOL, 1, 1
+
+! ===== Total over full domain =====
+ESEL, ALL
+SSUM, , B2V
+*GET, INT_TOT, SSUM, 0, ITEM, B2V
+W_TOT = INT_TOT/(2*MU0)
+*MSG, INFO, INT_TOT, W_TOT
+ SHELL_ALL  INT_B2V= %G  W= %G
+
+! ===== Shell 1: r < 1 mm =====
+ESEL, ALL
+CSYS, 11
+ESEL, S, CENT, X, 0, 1.0*MM     ! X in spherical CS = radial distance from origin
+CSYS, 0
+SSUM, , B2V
+*GET, INT_S1, SSUM, 0, ITEM, B2V
+W_S1 = INT_S1/(2*MU0)
+*MSG, INFO, INT_S1, W_S1
+ SHELL_R_LT_1MM  INT_B2V= %G  W= %G
+
+! ===== Shell 2: 1 mm < r < 2 mm =====
+ESEL, ALL
+CSYS, 11
+ESEL, S, CENT, X, 1.0*MM, 2.0*MM
+CSYS, 0
+SSUM, , B2V
+*GET, INT_S2, SSUM, 0, ITEM, B2V
+W_S2 = INT_S2/(2*MU0)
+*MSG, INFO, INT_S2, W_S2
+ SHELL_1_TO_2MM  INT_B2V= %G  W= %G
+
+! ===== Shell 3: 2 mm < r < 3 mm =====
+ESEL, ALL
+CSYS, 11
+ESEL, S, CENT, X, 2.0*MM, 3.0*MM
+CSYS, 0
+SSUM, , B2V
+*GET, INT_S3, SSUM, 0, ITEM, B2V
+W_S3 = INT_S3/(2*MU0)
+*MSG, INFO, INT_S3, W_S3
+ SHELL_2_TO_3MM  INT_B2V= %G  W= %G
+
+! ===== Shell 4: 3 mm < r < 5 mm =====
+ESEL, ALL
+CSYS, 11
+ESEL, S, CENT, X, 3.0*MM, 5.0*MM
+CSYS, 0
+SSUM, , B2V
+*GET, INT_S4, SSUM, 0, ITEM, B2V
+W_S4 = INT_S4/(2*MU0)
+*MSG, INFO, INT_S4, W_S4
+ SHELL_3_TO_5MM  INT_B2V= %G  W= %G
+
+! ===== Inductance from each shell =====
+L_TOT = 2*W_TOT
+L_S1  = 2*W_S1
+L_S2  = 2*W_S2
+L_S3  = 2*W_S3
+L_S4  = 2*W_S4
+*MSG, INFO, L_TOT, L_S1, L_S2, L_S3, L_S4
+ L_TOTAL= %G  L_R<1mm= %G  L_1-2mm= %G  L_2-3mm= %G  L_3-5mm= %G
+
+ALLSEL, ALL
+FINISH
+/EXIT, NOSAV
