@@ -13,8 +13,8 @@ POLE_CONE_LEN  = 15.875*MM
 POLE_TOTAL_LEN = 43.0*MM
 POLE_FLAT_LEN  = 28.0*MM
 
-! ===== Tip fillet (40 µm diameter = 20 µm radius) =====
-POLE_TIP_R = 0.020*MM
+! ===== Tip fillet (80 µm diameter = 40 µm radius, 與 sim 腳本 + Long 2016 一致) =====
+POLE_TIP_R = 0.040*MM
 
 ! Cone semi-angle ANG2
 POLE_CONE_HYP = sqrt(POLE_CONE_LEN*POLE_CONE_LEN + POLE_R*POLE_R)

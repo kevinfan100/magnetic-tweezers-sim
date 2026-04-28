@@ -7,7 +7,7 @@
 ! Pole 尺寸來自 Mag_Pole_Bottom.STEP
 ! =======================================
 
-/CWD,'C:\Users\pmero\Documents\Lab406\magnetic-tweezers-sim\hung\IGES'
+/CWD,'G:\my_workspace\code\magnetic-tweezers-sim\hung\IGES'
 
 /PREP7
 *afun, DEG
@@ -22,8 +22,8 @@ POLE_CONE_LEN  = 15.875*MM    ! [MODIFIED] 錐段長度
 POLE_TOTAL_LEN = 43.0*MM      ! [MODIFIED] 總長
 POLE_FLAT_LEN  = 28.0*MM      ! [MODIFIED] 削平長度
 
-! [ADDED] Tip fillet (40 µm diameter = 20 µm radius)
-POLE_TIP_R    = 0.020*MM
+! [MODIFIED] Tip fillet 80 µm diameter = 40 µm radius (與 sim 腳本 + Long 2016 一致)
+POLE_TIP_R    = 0.040*MM
 PCH           = sqrt(POLE_CONE_LEN*POLE_CONE_LEN + POLE_R*POLE_R)
 FANG1         = acos(POLE_R/PCH)
 FANG2         = 90 - FANG1
@@ -678,7 +678,8 @@ NUMCMP, KP
 *msg, INFO, fc_nvf
  Final: %I volumes
 
-SAVE, 'Full_Assembly_filleted', 'db'
+! [MODIFIED] commented out SAVE to prevent .db pollution in IGES folder
+!**** SAVE, 'Full_Assembly_filleted', 'db'
 
 ALLSEL, ALL
 IGESOUT, 'Full_Assembly_filleted', 'iges'
@@ -688,3 +689,5 @@ IGESOUT, 'Full_Assembly_filleted', 'iges'
 ! sed -i "s/,1.0,6,,/,1.0,1,,/" Hung_SphereModel_inch.iges
 
 FINISH
+! [ADDED] exit without auto-saving jobname.db - prevents pollution of IGES folder
+/EXIT, NOSAV
